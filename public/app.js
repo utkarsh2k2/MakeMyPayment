@@ -1,12 +1,12 @@
 const subscriptionListEl = document.getElementById("subscription-list");
 const subscriptionCountEl = document.getElementById("subscription-count");
-const insightCardsEl = document.getElementById("insight-cards");
+const insightCardsEl = document.getElementById("insights");
 const upcomingListEl = document.getElementById("upcoming-list");
 const subscriptionFormEl = document.getElementById("subscription-form");
-const scanQrBtnEl = document.getElementById("scan-qr-btn");
-const paymentMethodWrapEl = document.getElementById("payment-method-wrap");
-const paymentMethodEl = document.getElementById("payment-method");
-const paymentMessageEl = document.getElementById("payment-message");
+const toggleAddBtnEl = document.getElementById("toggle-add-btn");
+const autoDetectBtnEl = document.getElementById("auto-detect-btn");
+const statusMessageEl = document.getElementById("status-message");
+const addSubscriptionSectionEl = document.getElementById("add-subscription");
 
 async function requestJSON(url, options) {
   const response = await fetch(url, options);
@@ -40,26 +40,53 @@ function formatMoney(amount) {
   return `\u20b9${Number(amount).toLocaleString("en-IN")}`;
 }
 
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function getDaysUntil(isoDate) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const target = new Date(isoDate);
+  target.setHours(0, 0, 0, 0);
+  return Math.round((target - today) / (1000 * 60 * 60 * 24));
+}
+
+function showStatus(message, tone = "success") {
+  statusMessageEl.textContent = message;
+  statusMessageEl.style.color = tone === "error" ? "#ff8fa1" : "#6ce6b6";
+}
+
 function renderSubscriptions(subscriptions) {
   subscriptionCountEl.textContent = `${subscriptions.length} active`;
 
   if (!subscriptions.length) {
-    subscriptionListEl.innerHTML =
-      '<p class="muted">No subscriptions yet. Add one below.</p>';
+    subscriptionListEl.innerHTML = '<p class="empty-state">No subscriptions yet.</p>';
     return;
   }
 
-  subscriptionListEl.innerHTML = subscriptions
+  const byNearestBilling = [...subscriptions].sort(
+    (a, b) => new Date(a.nextBillingDate) - new Date(b.nextBillingDate)
+  );
+
+  subscriptionListEl.innerHTML = byNearestBilling
     .map(
       (subscription) => `
       <article class="subscription-card">
-        <h3>${subscription.serviceName}</h3>
-        <p class="subscription-meta"><strong>${formatMoney(
-          subscription.amount
-        )}</strong> • ${subscription.billingCycle}</p>
-        <p class="subscription-meta">Next billing: ${formatDate(
-          subscription.nextBillingDate
-        )}</p>
+        <div class="subscription-top">
+          <h3>${escapeHtml(subscription.serviceName)}</h3>
+          <span class="platform-pill">${escapeHtml(subscription.platform || "Credit Card")}</span>
+        </div>
+        <div class="meta-grid">
+          <p class="meta-row"><span>Cost / month</span><strong>${formatMoney(subscription.amount)}</strong></p>
+          <p class="meta-row"><span>Next billing</span><strong>${formatDate(subscription.nextBillingDate)}</strong></p>
+          <p class="meta-row"><span>Key platform</span><strong>${escapeHtml(subscription.platform || "Credit Card")}</strong></p>
+        </div>
         <footer>
           <button class="remove-btn" data-id="${subscription.id}" type="button">Remove</button>
         </footer>
@@ -71,24 +98,30 @@ function renderSubscriptions(subscriptions) {
 
 function renderInsights(insights) {
   insightCardsEl.innerHTML = insights.messages
-    .map((message) => `<article class="insight-card">${message}</article>`)
+    .map((message) => `<p class="insight-pill">${escapeHtml(message)}</p>`)
     .join("");
 }
 
 function renderUpcomingCharges(charges) {
   if (!charges.length) {
-    upcomingListEl.innerHTML =
-      "<li><span class='muted'>No renewals in the next 7 days.</span></li>";
+    upcomingListEl.innerHTML = "<p class='empty-state'>No charges in the next 7 days.</p>";
     return;
   }
 
-  upcomingListEl.innerHTML = charges
+  const byDate = [...charges].sort(
+    (a, b) => new Date(a.nextBillingDate) - new Date(b.nextBillingDate)
+  );
+
+  upcomingListEl.innerHTML = byDate
     .map(
       (charge) => `
-      <li>
-        <strong>${charge.serviceName}</strong><br />
-        ${formatMoney(charge.amount)} • ${formatDate(charge.nextBillingDate)}
-      </li>
+      <article class="upcoming-item">
+        <strong>${escapeHtml(charge.serviceName)}</strong>
+        <span>${formatMoney(charge.amount)} / month</span>
+        <span class="${getDaysUntil(charge.nextBillingDate) <= 2 ? "highlight-text" : ""}">
+          Bills on ${formatDate(charge.nextBillingDate)} (${getDaysUntil(charge.nextBillingDate)} day${getDaysUntil(charge.nextBillingDate) === 1 ? "" : "s"})
+        </span>
+      </article>
     `
     )
     .join("");
@@ -106,7 +139,8 @@ async function loadDashboard() {
     renderInsights(insights);
     renderUpcomingCharges(upcomingCharges);
   } catch (error) {
-    subscriptionListEl.innerHTML = `<p class="muted">${error.message}</p>`;
+    subscriptionListEl.innerHTML = `<p class="empty-state">${escapeHtml(error.message)}</p>`;
+    showStatus("Could not load dashboard data.", "error");
   }
 }
 
@@ -124,8 +158,11 @@ subscriptionFormEl.addEventListener("submit", async (event) => {
 
     subscriptionFormEl.reset();
     await loadDashboard();
+    showStatus("Subscription added.");
+    addSubscriptionSectionEl.classList.add("hidden");
+    toggleAddBtnEl.textContent = "Add Subscription";
   } catch (error) {
-    alert(error.message);
+    showStatus(error.message, "error");
   }
 });
 
@@ -140,23 +177,41 @@ subscriptionListEl.addEventListener("click", async (event) => {
       method: "DELETE"
     });
     await loadDashboard();
+    showStatus("Subscription removed.");
   } catch (error) {
-    alert(error.message);
+    showStatus(error.message, "error");
   }
 });
 
-scanQrBtnEl.addEventListener("click", () => {
-  paymentMethodWrapEl.classList.toggle("hidden");
-  paymentMessageEl.textContent = paymentMethodWrapEl.classList.contains("hidden")
-    ? ""
-    : "Choose a method to simulate QR payment flow.";
+toggleAddBtnEl.addEventListener("click", () => {
+  addSubscriptionSectionEl.classList.toggle("hidden");
+  const isHidden = addSubscriptionSectionEl.classList.contains("hidden");
+  toggleAddBtnEl.textContent = isHidden ? "Add Subscription" : "Close";
+  if (!isHidden) {
+    addSubscriptionSectionEl.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 });
 
-paymentMethodEl.addEventListener("change", () => {
-  const selected = paymentMethodEl.value;
-  paymentMessageEl.textContent = selected
-    ? `${selected} selected for simulated QR payment.`
-    : "Choose a method to simulate QR payment flow.";
+autoDetectBtnEl.addEventListener("click", async () => {
+  autoDetectBtnEl.disabled = true;
+  autoDetectBtnEl.textContent = "Detecting...";
+
+  try {
+    const detectionResult = await requestJSON("/api/subscriptions/auto-detect", {
+      method: "POST"
+    });
+    await loadDashboard();
+    if (!detectionResult.addedCount) {
+      showStatus("No new subscriptions found this time.");
+    } else {
+      showStatus(`Auto-detected ${detectionResult.addedCount} subscription(s).`);
+    }
+  } catch (error) {
+    showStatus(error.message, "error");
+  } finally {
+    autoDetectBtnEl.disabled = false;
+    autoDetectBtnEl.textContent = "Auto-detect subscriptions";
+  }
 });
 
 loadDashboard();

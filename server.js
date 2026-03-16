@@ -4,9 +4,43 @@ const { subscriptions } = require("./data/subscriptions");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const PLATFORM_LABELS = ["Google Play", "Apple App Store", "UPI", "Credit Card", "Bank"];
+const AUTO_DETECT_CATALOG = [
+  { serviceName: "YouTube Premium", amount: 129, nextBillingInDays: 3, platform: "Google Play" },
+  { serviceName: "iCloud+", amount: 75, nextBillingInDays: 5, platform: "Apple App Store" },
+  { serviceName: "Amazon Prime", amount: 299, nextBillingInDays: 8, platform: "UPI" }
+];
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
+
+function addDaysFromToday(days) {
+  const date = new Date();
+  date.setDate(date.getDate() + days);
+  return date.toISOString().split("T")[0];
+}
+
+function detectPlatformFromService(serviceName) {
+  const value = String(serviceName || "").toLowerCase();
+  if (value.includes("icloud") || value.includes("apple")) {
+    return "Apple App Store";
+  }
+  if (value.includes("youtube") || value.includes("google") || value.includes("play")) {
+    return "Google Play";
+  }
+  if (value.includes("gym") || value.includes("prime") || value.includes("swiggy")) {
+    return "UPI";
+  }
+  return "Credit Card";
+}
+
+function normalizePlatform(platform, serviceName) {
+  const clean = String(platform || "").trim();
+  if (!clean) {
+    return detectPlatformFromService(serviceName);
+  }
+  return PLATFORM_LABELS.includes(clean) ? clean : detectPlatformFromService(serviceName);
+}
 
 function parseDateOnly(dateValue) {
   const parsed = new Date(dateValue);
@@ -50,15 +84,19 @@ function buildInsights() {
   };
 }
 
+subscriptions.forEach((subscription) => {
+  subscription.platform = normalizePlatform(subscription.platform, subscription.serviceName);
+});
+
 app.get("/api/subscriptions", (_req, res) => {
   res.json(subscriptions);
 });
 
 app.post("/api/subscriptions", (req, res) => {
-  const { serviceName, amount, billingCycle, nextBillingDate } = req.body;
+  const { serviceName, amount, billingCycle, nextBillingDate, platform } = req.body;
 
-  if (!serviceName || !amount || !billingCycle || !nextBillingDate) {
-    return res.status(400).json({ error: "All fields are required." });
+  if (!serviceName || !amount || !nextBillingDate) {
+    return res.status(400).json({ error: "Service, amount and billing date are required." });
   }
 
   const parsedAmount = Number(amount);
@@ -75,12 +113,36 @@ app.post("/api/subscriptions", (req, res) => {
     id: `${Date.now()}-${Math.floor(Math.random() * 10000)}`,
     serviceName: String(serviceName).trim(),
     amount: parsedAmount,
-    billingCycle: String(billingCycle).trim(),
-    nextBillingDate
+    billingCycle: String(billingCycle || "Monthly").trim() || "Monthly",
+    nextBillingDate,
+    platform: normalizePlatform(platform, serviceName)
   };
 
   subscriptions.push(newSubscription);
   return res.status(201).json(newSubscription);
+});
+
+app.post("/api/subscriptions/auto-detect", (_req, res) => {
+  const existingNames = new Set(
+    subscriptions.map((subscription) => subscription.serviceName.trim().toLowerCase())
+  );
+
+  const detected = AUTO_DETECT_CATALOG.filter(
+    (candidate) => !existingNames.has(candidate.serviceName.toLowerCase())
+  ).map((candidate) => ({
+    id: `${Date.now()}-${Math.floor(Math.random() * 10000)}`,
+    serviceName: candidate.serviceName,
+    amount: candidate.amount,
+    billingCycle: "Monthly",
+    nextBillingDate: addDaysFromToday(candidate.nextBillingInDays),
+    platform: candidate.platform
+  }));
+
+  subscriptions.push(...detected);
+  return res.status(201).json({
+    detected,
+    addedCount: detected.length
+  });
 });
 
 app.delete("/api/subscriptions/:id", (req, res) => {
