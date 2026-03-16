@@ -103,7 +103,7 @@ app.get("/api/insights", (_req, res) => {
   res.json(buildInsights());
 });
 
-app.get("*", (_req, res) => {
+app.get(/.*/, (_req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
