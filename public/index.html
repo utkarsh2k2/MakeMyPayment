@@ -4,91 +4,100 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Subscription Intelligence</title>
+    <link
+      rel="preconnect"
+      href="https://fonts.googleapis.com"
+    />
+    <link
+      rel="preconnect"
+      href="https://fonts.gstatic.com"
+      crossorigin
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@500;700&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
-    <header class="topbar">
-      <div class="brand">
-        <h1>Subscription Intelligence</h1>
-        <p>Track recurring payments with clarity.</p>
-      </div>
-      <nav class="nav">
-        <a href="#dashboard">Dashboard</a>
-        <a href="#add-subscription">Add</a>
-        <a href="#payments">Payments</a>
-      </nav>
-    </header>
-
-    <main class="container">
-      <section id="insights" class="section">
-        <h2>Subscription Insights</h2>
-        <div id="insight-cards" class="insight-grid"></div>
-      </section>
-
-      <section id="dashboard" class="section">
-        <div class="section-header">
-          <h2>Subscription Dashboard</h2>
-          <span id="subscription-count" class="badge">0 active</span>
+    <div class="app-shell">
+      <header class="app-header">
+        <div class="brand">
+          <p class="eyebrow">Subscription dashboard</p>
+          <h1>Subscription Intelligence</h1>
+          <p class="subtitle">Minimal tracking. Maximum clarity.</p>
         </div>
-        <div id="subscription-list" class="card-list"></div>
-      </section>
+        <div class="header-actions">
+          <button id="auto-detect-btn" class="ghost-btn" type="button">
+            Auto-detect subscriptions
+          </button>
+          <button id="toggle-add-btn" class="primary-btn" type="button">
+            Add Subscription
+          </button>
+        </div>
+        <p id="status-message" class="status-message" role="status" aria-live="polite"></p>
+      </header>
 
-      <section id="upcoming" class="section">
-        <h2>Upcoming Charges (Next 7 Days)</h2>
-        <ul id="upcoming-list" class="upcoming-list"></ul>
-      </section>
-
-      <section id="add-subscription" class="section">
-        <h2>Add Subscription</h2>
-        <form id="subscription-form" class="form-card">
-          <label>
-            Service Name
-            <input
-              type="text"
-              name="serviceName"
-              placeholder="e.g. Notion Pro"
-              required
-            />
-          </label>
-          <label>
-            Amount (₹)
-            <input type="number" name="amount" min="1" step="1" required />
-          </label>
-          <label>
-            Billing Cycle
-            <select name="billingCycle" required>
-              <option value="Monthly">Monthly</option>
-              <option value="Quarterly">Quarterly</option>
-              <option value="Yearly">Yearly</option>
-            </select>
-          </label>
-          <label>
-            Next Billing Date
-            <input type="date" name="nextBillingDate" required />
-          </label>
-          <button type="submit" class="primary-btn">Add Subscription</button>
-        </form>
-      </section>
-
-      <section id="payments" class="section">
-        <h2>QR Payment Launcher</h2>
-        <div class="payment-card">
-          <button id="scan-qr-btn" class="primary-btn" type="button">Scan QR</button>
-          <div id="payment-method-wrap" class="hidden">
-            <label for="payment-method">Choose payment method</label>
-            <select id="payment-method">
-              <option value="">Select</option>
-              <option>Google Pay</option>
-              <option>PhonePe</option>
-              <option>Paytm</option>
-              <option>Bank UPI</option>
-              <option>Credit Card</option>
-            </select>
+      <main class="dashboard">
+        <section id="upcoming" class="panel upcoming-panel">
+          <div class="section-head">
+            <h2>Upcoming Charges</h2>
+            <span class="panel-note">Next 7 days</span>
           </div>
-          <p id="payment-message" class="muted"></p>
-        </div>
-      </section>
-    </main>
+          <div id="upcoming-list" class="upcoming-list"></div>
+        </section>
+
+        <section id="insights" class="insight-strip"></section>
+
+        <section id="dashboard" class="panel">
+          <div class="section-head">
+            <h2>Your Subscriptions</h2>
+            <span id="subscription-count" class="badge">0 active</span>
+          </div>
+          <div id="subscription-list" class="card-list"></div>
+        </section>
+
+        <section id="add-subscription" class="panel hidden">
+          <div class="section-head">
+            <h2>Add Subscription</h2>
+            <span class="panel-note">Manual entry</span>
+          </div>
+          <form id="subscription-form" class="form-card">
+            <label>
+              Service Name
+              <input
+                type="text"
+                name="serviceName"
+                placeholder="e.g. Notion Pro"
+                required
+              />
+            </label>
+            <label>
+              Cost per month (INR)
+              <input type="number" name="amount" min="1" step="1" required />
+            </label>
+            <label>
+              Next Billing Date
+              <input type="date" name="nextBillingDate" required />
+            </label>
+            <label>
+              Key Platform
+              <select name="platform" required>
+                <option value="Google Play">Google Play</option>
+                <option value="Apple App Store">Apple App Store</option>
+                <option value="UPI">UPI</option>
+                <option value="PhonePe">PhonePe</option>
+                <option value="PhonePe Autopay">PhonePe Autopay</option>
+                <option value="Credit Card">Credit Card</option>
+                <option value="Bank">Bank</option>
+              </select>
+            </label>
+            <input type="hidden" name="billingCycle" value="Monthly" />
+            <button type="submit" class="primary-btn">Save Subscription</button>
+          </form>
+        </section>
+      </main>
+    </div>
 
     <script src="/app.js"></script>
   </body>
