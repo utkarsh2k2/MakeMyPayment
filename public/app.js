@@ -62,8 +62,14 @@ function showStatus(message, tone = "success") {
   statusMessageEl.style.color = tone === "error" ? "#ff8fa1" : "#6ce6b6";
 }
 
+function supportsPause(platform) {
+  const method = String(platform || "").toLowerCase();
+  return method.includes("upi") || method.includes("autopay") || method.includes("phonepe");
+}
+
 function renderSubscriptions(subscriptions) {
-  subscriptionCountEl.textContent = `${subscriptions.length} active`;
+  const activeCount = subscriptions.filter((subscription) => !subscription.isPaused).length;
+  subscriptionCountEl.textContent = `${activeCount} active`;
 
   if (!subscriptions.length) {
     subscriptionListEl.innerHTML = '<p class="empty-state">No subscriptions yet.</p>';
@@ -76,7 +82,9 @@ function renderSubscriptions(subscriptions) {
 
   subscriptionListEl.innerHTML = byNearestBilling
     .map(
-      (subscription) => `
+      (subscription) => {
+        const canPause = supportsPause(subscription.platform);
+        return `
       <article class="subscription-card">
         <div class="subscription-top">
           <h3>${escapeHtml(subscription.serviceName)}</h3>
@@ -86,12 +94,30 @@ function renderSubscriptions(subscriptions) {
           <p class="meta-row"><span>Cost / month</span><strong>${formatMoney(subscription.amount)}</strong></p>
           <p class="meta-row"><span>Next billing</span><strong>${formatDate(subscription.nextBillingDate)}</strong></p>
           <p class="meta-row"><span>Key platform</span><strong>${escapeHtml(subscription.platform || "Credit Card")}</strong></p>
+          ${
+            subscription.isPaused
+              ? '<p class="meta-row"><span>Status</span><strong class="highlight-text">Paused</strong></p>'
+              : ""
+          }
         </div>
         <footer>
+          ${
+            canPause
+              ? `<button
+                  class="pause-btn"
+                  data-id="${subscription.id}"
+                  type="button"
+                  ${subscription.isPaused ? "disabled" : ""}
+                >
+                  ${subscription.isPaused ? "Paused" : "Pause"}
+                </button>`
+              : ""
+          }
           <button class="remove-btn" data-id="${subscription.id}" type="button">Remove</button>
         </footer>
       </article>
-    `
+    `;
+      }
     )
     .join("");
 }
@@ -167,6 +193,20 @@ subscriptionFormEl.addEventListener("submit", async (event) => {
 });
 
 subscriptionListEl.addEventListener("click", async (event) => {
+  const pauseBtn = event.target.closest(".pause-btn");
+  if (pauseBtn) {
+    try {
+      await requestJSON(`/api/subscriptions/${pauseBtn.dataset.id}/pause`, {
+        method: "PATCH"
+      });
+      await loadDashboard();
+      showStatus("Subscription paused.");
+    } catch (error) {
+      showStatus(error.message, "error");
+    }
+    return;
+  }
+
   const removeBtn = event.target.closest(".remove-btn");
   if (!removeBtn) {
     return;

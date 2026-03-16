@@ -214,6 +214,8 @@ body {
   margin-top: 0.7rem;
   display: flex;
   justify-content: flex-end;
+  gap: 0.45rem;
+  flex-wrap: wrap;
 }
 
 .form-card {
@@ -253,7 +255,8 @@ select:focus {
 
 .primary-btn,
 .ghost-btn,
-.remove-btn {
+.remove-btn,
+.pause-btn {
   border: 1px solid transparent;
   border-radius: 12px;
   padding: 0.58rem 0.78rem;
@@ -290,6 +293,22 @@ select:focus {
 
 .remove-btn:hover {
   background: rgba(255, 143, 161, 0.3);
+}
+
+.pause-btn {
+  background: rgba(108, 230, 182, 0.14);
+  border-color: rgba(108, 230, 182, 0.35);
+  color: #c8f7e5;
+}
+
+.pause-btn:hover {
+  background: rgba(108, 230, 182, 0.24);
+}
+
+.pause-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
 }
 
 .muted {

@@ -4,11 +4,34 @@ const { subscriptions } = require("./data/subscriptions");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const PLATFORM_LABELS = ["Google Play", "Apple App Store", "UPI", "Credit Card", "Bank"];
+const PLATFORM_LABELS = [
+  "Google Play",
+  "Apple App Store",
+  "UPI",
+  "PhonePe",
+  "PhonePe Autopay",
+  "Credit Card",
+  "Bank"
+];
 const AUTO_DETECT_CATALOG = [
-  { serviceName: "YouTube Premium", amount: 129, nextBillingInDays: 3, platform: "Google Play" },
-  { serviceName: "iCloud+", amount: 75, nextBillingInDays: 5, platform: "Apple App Store" },
-  { serviceName: "Amazon Prime", amount: 299, nextBillingInDays: 8, platform: "UPI" }
+  {
+    serviceName: "YouTube Premium",
+    amount: 129,
+    nextBillingInDays: 3,
+    platform: "Google Play"
+  },
+  {
+    serviceName: "iCloud+",
+    amount: 75,
+    nextBillingInDays: 5,
+    platform: "Apple App Store"
+  },
+  {
+    serviceName: "Amazon Prime",
+    amount: 299,
+    nextBillingInDays: 8,
+    platform: "PhonePe Autopay"
+  }
 ];
 
 app.use(express.json());
@@ -22,6 +45,9 @@ function addDaysFromToday(days) {
 
 function detectPlatformFromService(serviceName) {
   const value = String(serviceName || "").toLowerCase();
+  if (value.includes("phonepe")) {
+    return value.includes("autopay") ? "PhonePe Autopay" : "PhonePe";
+  }
   if (value.includes("icloud") || value.includes("apple")) {
     return "Apple App Store";
   }
@@ -42,6 +68,11 @@ function normalizePlatform(platform, serviceName) {
   return PLATFORM_LABELS.includes(clean) ? clean : detectPlatformFromService(serviceName);
 }
 
+function supportsPauseByPlatform(platform) {
+  const method = String(platform || "").toLowerCase();
+  return method.includes("upi") || method.includes("autopay") || method.includes("phonepe");
+}
+
 function parseDateOnly(dateValue) {
   const parsed = new Date(dateValue);
   parsed.setHours(0, 0, 0, 0);
@@ -57,7 +88,7 @@ function getUpcomingSubscriptions(days = 7) {
 
   return subscriptions.filter((subscription) => {
     const billingDate = parseDateOnly(subscription.nextBillingDate);
-    return billingDate >= today && billingDate <= limit;
+    return !subscription.isPaused && billingDate >= today && billingDate <= limit;
   });
 }
 
@@ -66,16 +97,22 @@ function buildInsights() {
     (sum, subscription) => sum + Number(subscription.amount || 0),
     0
   );
+  const activeMonthlySpend = subscriptions.reduce((sum, subscription) => {
+    if (subscription.isPaused) {
+      return sum;
+    }
+    return sum + Number(subscription.amount || 0);
+  }, 0);
   const renewalsThisWeek = getUpcomingSubscriptions(7).length;
   const previousMonthSpend = 3700;
-  const spendingIncreased = totalMonthlySpend > previousMonthSpend;
+  const spendingIncreased = activeMonthlySpend > previousMonthSpend;
 
   return {
-    totalMonthlySpend,
+    totalMonthlySpend: activeMonthlySpend,
     renewalsThisWeek,
     spendingIncreased,
     messages: [
-      `You are paying \u20b9${totalMonthlySpend}/month in subscriptions.`,
+      `You are paying \u20b9${activeMonthlySpend}/month in subscriptions.`,
       `${renewalsThisWeek} subscriptions renew this week.`,
       spendingIncreased
         ? "Your subscription spending increased."
@@ -86,6 +123,7 @@ function buildInsights() {
 
 subscriptions.forEach((subscription) => {
   subscription.platform = normalizePlatform(subscription.platform, subscription.serviceName);
+  subscription.isPaused = Boolean(subscription.isPaused);
 });
 
 app.get("/api/subscriptions", (_req, res) => {
@@ -115,7 +153,8 @@ app.post("/api/subscriptions", (req, res) => {
     amount: parsedAmount,
     billingCycle: String(billingCycle || "Monthly").trim() || "Monthly",
     nextBillingDate,
-    platform: normalizePlatform(platform, serviceName)
+    platform: normalizePlatform(platform, serviceName),
+    isPaused: false
   };
 
   subscriptions.push(newSubscription);
@@ -135,7 +174,8 @@ app.post("/api/subscriptions/auto-detect", (_req, res) => {
     amount: candidate.amount,
     billingCycle: "Monthly",
     nextBillingDate: addDaysFromToday(candidate.nextBillingInDays),
-    platform: candidate.platform
+    platform: candidate.platform,
+    isPaused: false
   }));
 
   subscriptions.push(...detected);
@@ -155,6 +195,24 @@ app.delete("/api/subscriptions/:id", (req, res) => {
 
   subscriptions.splice(index, 1);
   return res.status(204).send();
+});
+
+app.patch("/api/subscriptions/:id/pause", (req, res) => {
+  const { id } = req.params;
+  const subscription = subscriptions.find((item) => item.id === id);
+
+  if (!subscription) {
+    return res.status(404).json({ error: "Subscription not found." });
+  }
+
+  if (!supportsPauseByPlatform(subscription.platform)) {
+    return res.status(400).json({
+      error: "Pause is available only for UPI or autopay subscriptions."
+    });
+  }
+
+  subscription.isPaused = true;
+  return res.json(subscription);
 });
 
 app.get("/api/upcoming-charges", (_req, res) => {
