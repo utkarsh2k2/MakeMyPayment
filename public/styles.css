@@ -1,0 +1,235 @@
+:root {
+  --bg: #f4f7fb;
+  --card: #ffffff;
+  --text: #112038;
+  --muted: #687790;
+  --primary: #2a67ff;
+  --primary-dark: #1d4fd6;
+  --danger: #ff4c61;
+  --border: #dce5f3;
+  --shadow: 0 10px 30px rgba(20, 42, 88, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: var(--text);
+  background: var(--bg);
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: linear-gradient(135deg, #10203a, #143c76);
+  color: #fff;
+  padding: 1rem;
+  border-bottom-left-radius: 1rem;
+  border-bottom-right-radius: 1rem;
+  box-shadow: 0 10px 20px rgba(6, 20, 47, 0.25);
+}
+
+.brand h1 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.brand p {
+  margin: 0.4rem 0 0;
+  color: #c7d8ff;
+  font-size: 0.9rem;
+}
+
+.nav {
+  margin-top: 0.9rem;
+  display: flex;
+  gap: 0.9rem;
+  overflow-x: auto;
+}
+
+.nav a {
+  color: #deebff;
+  text-decoration: none;
+  white-space: nowrap;
+  font-size: 0.9rem;
+}
+
+.container {
+  padding: 1rem;
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+.section {
+  margin-top: 1rem;
+}
+
+.section h2 {
+  margin: 0 0 0.6rem;
+  font-size: 1.1rem;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.badge {
+  font-size: 0.8rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  background: #d9e4ff;
+  color: #193a84;
+}
+
+.insight-grid {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.insight-card {
+  background: var(--card);
+  padding: 0.9rem;
+  border-radius: 0.85rem;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  font-weight: 500;
+}
+
+.card-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.subscription-card {
+  background: var(--card);
+  border-radius: 0.9rem;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  padding: 0.9rem;
+}
+
+.subscription-card h3 {
+  margin: 0 0 0.45rem;
+  font-size: 1rem;
+}
+
+.subscription-meta {
+  margin: 0.25rem 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.subscription-card footer {
+  margin-top: 0.8rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.remove-btn {
+  border: 0;
+  color: #fff;
+  background: var(--danger);
+  padding: 0.5rem 0.7rem;
+  border-radius: 0.55rem;
+  cursor: pointer;
+}
+
+.remove-btn:hover {
+  opacity: 0.9;
+}
+
+.upcoming-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.upcoming-list li {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  padding: 0.75rem;
+  box-shadow: var(--shadow);
+}
+
+.form-card,
+.payment-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 0.9rem;
+  box-shadow: var(--shadow);
+  padding: 0.9rem;
+  display: grid;
+  gap: 0.75rem;
+}
+
+label {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+input,
+select,
+button {
+  font: inherit;
+}
+
+input,
+select {
+  border: 1px solid #c7d4ea;
+  border-radius: 0.55rem;
+  padding: 0.55rem 0.6rem;
+  background: #fff;
+}
+
+.primary-btn {
+  border: 0;
+  border-radius: 0.6rem;
+  padding: 0.6rem 0.75rem;
+  background: var(--primary);
+  color: #fff;
+  cursor: pointer;
+}
+
+.primary-btn:hover {
+  background: var(--primary-dark);
+}
+
+.hidden {
+  display: none;
+}
+
+.muted {
+  color: var(--muted);
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+@media (min-width: 768px) {
+  .container {
+    padding: 1.4rem;
+  }
+
+  .insight-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .card-list {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .topbar {
+    padding: 1.2rem 1.4rem;
+  }
+}

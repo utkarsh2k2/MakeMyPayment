@@ -1,0 +1,20 @@
+{
+  "name": "subscription-intelligence",
+  "version": "1.0.0",
+  "description": "Mobile-first dashboard for tracking recurring subscriptions",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": [
+    "subscriptions",
+    "dashboard",
+    "express",
+    "railway"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^5.1.0"
+  }
+}
