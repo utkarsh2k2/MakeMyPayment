@@ -32,78 +32,48 @@
     <div id="app-shell" class="app-shell" aria-hidden="true">
       <header class="app-header">
         <div class="brand">
-          <p class="eyebrow">Subscription dashboard</p>
+          <p class="eyebrow">Payments</p>
           <h1>Subscription Intelligence</h1>
-          <p class="subtitle">Minimal tracking. Maximum clarity.</p>
         </div>
-        <div class="header-actions">
-          <button id="open-add-modal-btn" class="primary-btn" type="button">
-            Add Subscription
-          </button>
-        </div>
-        <nav class="tab-nav" role="tablist" aria-label="Primary">
-          <button
-            class="tab-btn is-active"
-            id="tab-dashboard"
-            data-target="dashboard-panel"
-            type="button"
-            role="tab"
-            aria-controls="dashboard-panel"
-            aria-selected="true"
-          >
-            Dashboard
-          </button>
-          <button
-            class="tab-btn"
-            id="tab-payments"
-            data-target="payments-panel"
-            type="button"
-            role="tab"
-            aria-controls="payments-panel"
-            aria-selected="false"
-          >
-            Payments
-          </button>
-        </nav>
         <p id="status-message" class="status-message" role="status" aria-live="polite"></p>
       </header>
 
-      <main class="tab-panels">
+      <main class="screen-stack">
         <section
-          id="dashboard-panel"
-          class="tab-panel is-active"
-          role="tabpanel"
-          aria-labelledby="tab-dashboard"
+          id="home-screen"
+          class="app-screen is-active"
+          role="region"
+          aria-label="Home"
         >
-          <section id="upcoming" class="panel upcoming-panel">
+          <section class="panel payments-hero-panel">
             <div class="section-head">
-              <h2>Upcoming Charges</h2>
-              <span id="upcoming-summary" class="panel-note">₹3,200 due this week</span>
+              <h2>Pay using QR</h2>
+              <span class="panel-note">Instant transfer</span>
             </div>
-            <div id="upcoming-list" class="upcoming-list"></div>
+            <button id="pay-using-qr-btn" class="primary-btn cta-btn" type="button">
+              Pay using QR
+            </button>
+            <div class="quick-home-actions">
+              <button class="ghost-btn" data-action="open-qr" type="button">Send money</button>
+              <button class="ghost-btn" data-action="open-qr" type="button">Scan QR</button>
+            </div>
           </section>
-
-          <section id="insights" class="insight-strip"></section>
 
           <section class="panel">
             <div class="section-head">
-              <h2>Your Subscriptions</h2>
-              <span id="subscription-count" class="badge">0 active</span>
+              <h2>Quick Payment Options</h2>
             </div>
-            <div id="subscription-list" class="card-list"></div>
+            <div class="quick-pay-grid">
+              <button class="pay-option-btn" type="button" data-method="Google Pay">Google Pay</button>
+              <button class="pay-option-btn" type="button" data-method="PhonePe">PhonePe</button>
+              <button class="pay-option-btn" type="button" data-method="Paytm">Paytm</button>
+              <button class="pay-option-btn" type="button" data-method="Bank UPI">Bank UPI</button>
+            </div>
           </section>
-        </section>
 
-        <section
-          id="payments-panel"
-          class="tab-panel"
-          role="tabpanel"
-          aria-labelledby="tab-payments"
-          hidden
-        >
           <section class="panel payment-panel">
             <div class="section-head">
-              <h2>Payment Launcher</h2>
+              <h2>QR Payment Flow</h2>
               <span class="panel-note">QR simulation</span>
             </div>
             <p class="panel-description">Start a quick payment flow with your preferred method.</p>
@@ -125,7 +95,70 @@
             <p id="payment-message" class="muted"></p>
           </section>
         </section>
+
+        <section
+          id="subscriptions-screen"
+          class="app-screen"
+          role="region"
+          aria-label="Subscriptions"
+          hidden
+        >
+          <section id="upcoming" class="panel upcoming-panel">
+            <div class="section-head">
+              <h2>Upcoming Charges</h2>
+              <span id="upcoming-summary" class="panel-note">₹3,200 due this week</span>
+            </div>
+            <div id="upcoming-list" class="upcoming-list"></div>
+          </section>
+
+          <section id="insights" class="insight-strip"></section>
+
+          <section class="panel">
+            <div class="section-head">
+              <h2>Your Subscriptions</h2>
+              <span id="subscription-count" class="badge">0 active</span>
+            </div>
+            <div class="section-head section-head-tight">
+              <span class="panel-note">Manage recurring payments</span>
+              <button id="open-add-modal-btn" class="ghost-btn" type="button">Add</button>
+            </div>
+            <div id="subscription-list" class="card-list"></div>
+          </section>
+        </section>
       </main>
+
+      <nav class="bottom-tab-bar" role="tablist" aria-label="Main navigation">
+        <button
+          class="bottom-tab-btn is-active"
+          type="button"
+          data-screen="home-screen"
+          role="tab"
+          aria-controls="home-screen"
+          aria-selected="true"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M12 3.5l7.5 6.6v9.4a1 1 0 0 1-1 1h-13a1 1 0 0 1-1-1v-9.4L12 3.5zm0 2.7L6 11v7.5h12V11L12 6.2zm-3 4.3h6v1.8H9v-1.8zm0 3.2h6v1.8H9v-1.8z"
+            />
+          </svg>
+          <span>Home</span>
+        </button>
+        <button
+          class="bottom-tab-btn"
+          type="button"
+          data-screen="subscriptions-screen"
+          role="tab"
+          aria-controls="subscriptions-screen"
+          aria-selected="false"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M5 5h14a1 1 0 0 1 1 1v2.5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zm0 5.8h14a1 1 0 0 1 1 1v2.5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-2.5a1 1 0 0 1 1-1zm0 5.8h14a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-2.4a1 1 0 0 1 1-1z"
+            />
+          </svg>
+          <span>Subscriptions</span>
+        </button>
+      </nav>
     </div>
 
     <div id="add-modal" class="modal-backdrop" hidden>
