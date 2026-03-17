@@ -32,7 +32,7 @@
     <div id="app-shell" class="app-shell" aria-hidden="true">
       <header class="app-header">
         <div class="brand">
-          <p class="eyebrow">Payments</p>
+          <p class="eyebrow">Banking insights</p>
           <h1>Subscription Intelligence</h1>
         </div>
         <p id="status-message" class="status-message" role="status" aria-live="polite"></p>
@@ -45,54 +45,16 @@
           role="region"
           aria-label="Home"
         >
-          <section class="panel payments-hero-panel">
+          <section class="panel deductions-panel">
             <div class="section-head">
-              <h2>Pay using QR</h2>
-              <span class="panel-note">Instant transfer</span>
+              <h2>Upcoming deductions</h2>
+              <span class="panel-note">This week</span>
             </div>
-            <button id="pay-using-qr-btn" class="primary-btn cta-btn" type="button">
-              Pay using QR
+            <p class="deductions-amount">₹3,200 will be debited this week</p>
+            <p class="panel-description" id="home-active-subtext">Across 4 active subscriptions</p>
+            <button id="view-subscriptions-btn" class="primary-btn cta-btn" type="button">
+              View Subscriptions
             </button>
-            <div class="quick-home-actions">
-              <button class="ghost-btn" data-action="open-qr" type="button">Send money</button>
-              <button class="ghost-btn" data-action="open-qr" type="button">Scan QR</button>
-            </div>
-          </section>
-
-          <section class="panel">
-            <div class="section-head">
-              <h2>Quick Payment Options</h2>
-            </div>
-            <div class="quick-pay-grid">
-              <button class="pay-option-btn" type="button" data-method="Google Pay">Google Pay</button>
-              <button class="pay-option-btn" type="button" data-method="PhonePe">PhonePe</button>
-              <button class="pay-option-btn" type="button" data-method="Paytm">Paytm</button>
-              <button class="pay-option-btn" type="button" data-method="Bank UPI">Bank UPI</button>
-            </div>
-          </section>
-
-          <section class="panel payment-panel">
-            <div class="section-head">
-              <h2>QR Payment Flow</h2>
-              <span class="panel-note">QR simulation</span>
-            </div>
-            <p class="panel-description">Start a quick payment flow with your preferred method.</p>
-            <div class="payment-actions">
-              <button id="scan-qr-btn" class="primary-btn" type="button">Scan QR</button>
-            </div>
-            <div id="payment-method-wrap" class="hidden">
-              <label for="payment-method">Choose payment method</label>
-              <select id="payment-method">
-                <option value="">Select a method</option>
-                <option>Google Pay</option>
-                <option>PhonePe</option>
-                <option>Paytm</option>
-                <option>BHIM UPI</option>
-                <option>Bank UPI</option>
-                <option>Credit/Debit Card</option>
-              </select>
-            </div>
-            <p id="payment-message" class="muted"></p>
           </section>
         </section>
 
@@ -103,6 +65,14 @@
           aria-label="Subscriptions"
           hidden
         >
+          <section class="panel spending-panel">
+            <div class="section-head">
+              <h2>Recurring spending</h2>
+              <span class="panel-note">Estimated</span>
+            </div>
+            <p class="spending-amount">₹5,800 per month</p>
+          </section>
+
           <section id="upcoming" class="panel upcoming-panel">
             <div class="section-head">
               <h2>Upcoming Charges</h2>
@@ -112,6 +82,15 @@
           </section>
 
           <section id="insights" class="insight-strip"></section>
+
+          <section class="panel savings-panel">
+            <div class="section-head">
+              <h2>Potential savings</h2>
+            </div>
+            <p class="panel-description">
+              You may save ₹1,200/month by reviewing 2 subscriptions.
+            </p>
+          </section>
 
           <section class="panel">
             <div class="section-head">
@@ -138,7 +117,7 @@
         >
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path
-              d="M12 3.5l7.5 6.6v9.4a1 1 0 0 1-1 1h-13a1 1 0 0 1-1-1v-9.4L12 3.5zm0 2.7L6 11v7.5h12V11L12 6.2zm-3 4.3h6v1.8H9v-1.8zm0 3.2h6v1.8H9v-1.8z"
+              d="M3.8 6.8A1.8 1.8 0 0 1 5.6 5h12.8a1.8 1.8 0 0 1 1.8 1.8v10.4a1.8 1.8 0 0 1-1.8 1.8H5.6a1.8 1.8 0 0 1-1.8-1.8V6.8zm2 2.2v2.2h12.4V9H5.8zm0 4.2v3.6h6.1v-3.6H5.8z"
             />
           </svg>
           <span>Home</span>
@@ -203,7 +182,7 @@
         </form>
       </div>
     </div>
-
+    
     <script src="/app.js"></script>
   </body>
 </html>
