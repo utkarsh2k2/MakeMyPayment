@@ -219,6 +219,154 @@
             </div>
           </section>
         </section>
+
+        <section
+          id="demo-guide-screen"
+          class="app-screen"
+          role="region"
+          aria-label="Demo guide"
+          hidden
+        >
+          <section class="panel">
+            <div class="section-head">
+              <h2>Demo Guide</h2>
+              <span class="panel-note">What this app proves</span>
+            </div>
+            <p class="panel-description">
+              A product demo of a <span class="guide-highlight">Financial Guardian &amp; Optimizer</span> that keeps the dashboard clean while
+              proving two outcomes: <strong>credit protection</strong> (high‑stakes obligations) and <strong>savings discovery</strong> (bundle duplicates).
+            </p>
+
+            <div class="guide-grid">
+              <article class="guide-card">
+                <div class="guide-card-head">
+                  <p class="guide-kicker">Purpose</p>
+                  <h3 class="guide-title">What the demo is designed to show</h3>
+                </div>
+                <ul class="guide-list">
+                  <li><strong>Consent‑first tracking</strong>: fixed obligations appear only after the user adds them via Fetch.</li>
+                  <li><strong>Credit protection</strong>: highlight high‑impact due‑soon items and surface a simple safety score.</li>
+                  <li><strong>Optimization</strong>: flag OTT duplicates already included in telco bundles and estimate savings.</li>
+                  <li><strong>Control‑gap aware actions</strong>: adapt actions based on payment rail and MCC (bank‑only vs revocable).</li>
+                </ul>
+              </article>
+
+              <article class="guide-card">
+                <div class="guide-card-head">
+                  <p class="guide-kicker">Flow</p>
+                  <h3 class="guide-title">60‑second walkthrough</h3>
+                </div>
+                <ol class="guide-steps">
+                  <li>Open <strong>Subscriptions</strong> → call out the two top metrics.</li>
+                  <li>In <strong>Fixed Obligations</strong>, note it’s intentionally empty pre‑consent.</li>
+                  <li>Click <strong>Fetch my bills</strong> → review detected bills with impact tags.</li>
+                  <li>Click <strong>Add selected bills to Guardian</strong> → cards appear and the score updates.</li>
+                  <li>Open <strong>Lifestyle Subs</strong> → show bundle duplicates and “Switch to bundle”.</li>
+                </ol>
+              </article>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="section-head section-head-tight">
+              <h2>What to call out</h2>
+              <span class="panel-note">Talking points</span>
+            </div>
+            <div class="guide-grid">
+              <article class="guide-card">
+                <h3 class="guide-title">Credit protection</h3>
+                <p class="guide-copy">
+                  High‑impact items (EMI/insurance) due soon raise a CIBIL protection alert. The score is a simple
+                  proxy for “risk window visibility”, not a real bureau score.
+                </p>
+              </article>
+              <article class="guide-card">
+                <h3 class="guide-title">Optimization</h3>
+                <p class="guide-copy">
+                  The app flags subscriptions already included in bundles (Jio/Airtel) as potential savings and
+                  nudges users to switch safely.
+                </p>
+              </article>
+              <article class="guide-card">
+                <h3 class="guide-title">Control gaps</h3>
+                <p class="guide-copy">
+                  Some obligations can’t be canceled via third parties. Actions adapt based on payment rail and MCC
+                  (e.g., loan repayments are “Manage via bank”).
+                </p>
+              </article>
+            </div>
+            <p class="guide-footnote">
+              Demo note: This app uses simulated data and flows for clarity. It does not connect to real BBPS/AA rails.
+            </p>
+          </section>
+
+          <section class="panel guide-pitch-panel">
+            <div class="section-head section-head-tight">
+              <h2>Business Pitch</h2>
+              <span class="panel-note">Why this wins</span>
+            </div>
+            <p class="panel-description">
+              India’s bill ecosystem is fragmented across banks, billers, autopay rails and telco bundles. This product unifies
+              <strong>visibility</strong>, <strong>risk protection</strong>, and <strong>optimization</strong> into one consent-led experience.
+            </p>
+
+            <div class="pitch-grid">
+              <article class="pitch-card">
+                <p class="guide-kicker">Problem</p>
+                <h3 class="pitch-title">Missed high‑stakes bills are costly</h3>
+                <p class="pitch-copy">
+                  EMIs and insurance are spread across mandates and billers. Users lack a single place to see what’s due soon,
+                  and late payments can impact credit outcomes.
+                </p>
+              </article>
+
+              <article class="pitch-card">
+                <p class="guide-kicker">Solution</p>
+                <h3 class="pitch-title">Guardian + Optimizer</h3>
+                <p class="pitch-copy">
+                  Fetch obligations (BBPS/AA-style), track only what the user selects, highlight CIBIL-risk items, and surface
+                  savings from duplicate subscriptions already included in telco plans.
+                </p>
+              </article>
+
+              <article class="pitch-card">
+                <p class="guide-kicker">Moat</p>
+                <h3 class="pitch-title">Control-gap intelligence</h3>
+                <p class="pitch-copy">
+                  Actions are rail-aware: UPI AutoPay revoke flows, card mandate redirects, and bank-only management for loan MCCs.
+                  This reduces failed attempts and builds user trust.
+                </p>
+              </article>
+
+              <article class="pitch-card">
+                <p class="guide-kicker">Go-to-market</p>
+                <h3 class="pitch-title">Partner-led distribution</h3>
+                <p class="pitch-copy">
+                  Launch via lenders, insurers, fintech apps, and telcos: reduce delinquency risk, improve renewal rates, and offer
+                  a better “financial health” experience without handling money directly.
+                </p>
+              </article>
+
+              <article class="pitch-card">
+                <p class="guide-kicker">Revenue</p>
+                <h3 class="pitch-title">SaaS + success fees</h3>
+                <p class="pitch-copy">
+                  B2B2C pricing for partners plus optional success-based savings conversion (e.g., bundle switch guidance) and
+                  premium credit-protection alerts.
+                </p>
+              </article>
+
+              <article class="pitch-card">
+                <p class="guide-kicker">Compliance-first</p>
+                <h3 class="pitch-title">Consent + view-only posture</h3>
+                <p class="pitch-copy">
+                  The product emphasizes explicit user consent and view-only data access patterns, aligning with regulated rails
+                  while keeping the demo clear and credible.
+                </p>
+              </article>
+            </div>
+          </section>
+        </section>
       </main>
 
       <nav class="bottom-tab-bar" role="tablist" aria-label="Main navigation">
@@ -251,6 +399,21 @@
             />
           </svg>
           <span>Subscriptions</span>
+        </button>
+        <button
+          class="bottom-tab-btn"
+          type="button"
+          data-screen="demo-guide-screen"
+          role="tab"
+          aria-controls="demo-guide-screen"
+          aria-selected="false"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M7 3h10a2 2 0 0 1 2 2v14.2a1.8 1.8 0 0 1-1.8 1.8H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm0 3.2v12.8c0 .4.3.8.8.8h9.4c.4 0 .8-.3.8-.8V6.2H7zm2.3 2.1h6.9v1.5H9.3V8.3zm0 3.1h6.9v1.5H9.3v-1.5zm0 3.1h4.7V16H9.3v-1.5z"
+            />
+          </svg>
+          <span>Demo Guide</span>
         </button>
       </nav>
     </div>
