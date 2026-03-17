@@ -391,6 +391,10 @@ select:focus {
   box-shadow: 0 0 0 3px rgba(147, 168, 255, 0.22);
 }
 
+#add-subscription-select option:disabled {
+  color: #7e88a0;
+}
+
 .primary-btn,
 .ghost-btn,
 .remove-btn,

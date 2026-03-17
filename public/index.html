@@ -180,12 +180,12 @@
           &times;
         </button>
         <h2 id="add-modal-title">Add Subscription</h2>
-        <p class="modal-subtitle">Select source and subscription. Billing details are auto-filled.</p>
+        <p class="modal-subtitle">Select payment gateway and subscription. Billing details are auto-filled.</p>
         <form id="subscription-form" class="form-card">
           <label>
-            Platform
+            Payment Gateway
             <select id="add-platform-select" name="platform" required>
-              <option value="">Select platform</option>
+              <option value="">Select payment gateway</option>
               <optgroup label="UPI Apps">
                 <option>PhonePe</option>
                 <option>Google Pay</option>
@@ -228,7 +228,7 @@
             </select>
           </label>
           <p class="modal-note">Already-added subscriptions are disabled.</p>
-          <button type="submit" class="primary-btn">Save Subscription</button>
+          <button type="submit" class="primary-btn">Add Subscription</button>
         </form>
       </div>
     </div>

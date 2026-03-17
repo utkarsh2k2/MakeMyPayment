@@ -21,57 +21,47 @@ const paymentMethodWrapEl = document.getElementById("payment-method-wrap");
 const paymentMethodEl = document.getElementById("payment-method");
 const paymentMessageEl = document.getElementById("payment-message");
 
-const SUBSCRIPTION_CATALOG = {
-  PhonePe: [
-    { name: "Jio Recharge", amount: 399, billingInDays: 8 },
-    { name: "Gold's Gym", amount: 1800, billingInDays: 13 }
+const SUBSCRIPTION_DETAILS = {
+  "YouTube Premium": { amount: 139, billingInDays: 10 },
+  "Google One": { amount: 130, billingInDays: 14 },
+  Spotify: { amount: 119, billingInDays: 6 },
+  "Apple Music": { amount: 99, billingInDays: 16 },
+  "Jio Recharge": { amount: 399, billingInDays: 8 },
+  "Airtel Recharge": { amount: 349, billingInDays: 12 },
+  "Gold's Gym": { amount: 1800, billingInDays: 13 },
+  "Amazon Prime": { amount: 299, billingInDays: 7 },
+  "Swiggy One": { amount: 149, billingInDays: 11 },
+  "Zomato Gold": { amount: 149, billingInDays: 9 },
+  "Blinkit Plus": { amount: 199, billingInDays: 15 },
+  "ChatGPT Plus": { amount: 1660, billingInDays: 24 },
+  "Notion AI": { amount: 830, billingInDays: 26 },
+  "Cursor AI": { amount: 1632, billingInDays: 20 }
+};
+
+const GATEWAY_GROUP_MAP = {
+  upi: ["PhonePe", "Google Pay", "Paytm", "BHIM", "Amazon Pay UPI", "CRED"],
+  wallet: ["Amazon Pay", "Paytm Wallet", "MobiKwik", "Freecharge", "Airtel Money"],
+  payLater: [
+    "Amazon Pay Later",
+    "Simpl",
+    "LazyPay",
+    "MobiKwik Zip",
+    "Flipkart Pay Later",
+    "PostPe"
   ],
-  "Google Pay": [
-    { name: "Netflix", amount: 649, billingInDays: 4 },
-    { name: "YouTube Premium", amount: 139, billingInDays: 10 }
-  ],
-  Paytm: [
-    { name: "Zomato Gold", amount: 149, billingInDays: 9 },
-    { name: "Airtel Recharge", amount: 349, billingInDays: 15 }
-  ],
-  BHIM: [
-    { name: "Gold's Gym", amount: 1800, billingInDays: 13 },
-    { name: "Airtel Recharge", amount: 349, billingInDays: 15 }
-  ],
-  "Amazon Pay UPI": [
-    { name: "Amazon Prime", amount: 299, billingInDays: 7 },
-    { name: "Swiggy One", amount: 149, billingInDays: 12 }
-  ],
-  CRED: [
-    { name: "Swiggy One", amount: 149, billingInDays: 12 },
-    { name: "ChatGPT Plus", amount: 1660, billingInDays: 24 }
-  ],
-  "Amazon Pay": [{ name: "Amazon Prime", amount: 299, billingInDays: 7 }],
-  "Paytm Wallet": [{ name: "Disney+ Hotstar", amount: 299, billingInDays: 11 }],
-  MobiKwik: [{ name: "Zomato Gold", amount: 149, billingInDays: 9 }],
-  Freecharge: [{ name: "Jio Recharge", amount: 399, billingInDays: 8 }],
-  "Airtel Money": [{ name: "Airtel Recharge", amount: 349, billingInDays: 15 }],
-  "Amazon Pay Later": [{ name: "Amazon Prime", amount: 299, billingInDays: 7 }],
-  Simpl: [{ name: "Zomato Gold", amount: 149, billingInDays: 9 }],
-  LazyPay: [{ name: "Swiggy One", amount: 149, billingInDays: 12 }],
-  "MobiKwik Zip": [{ name: "YouTube Premium", amount: 139, billingInDays: 10 }],
-  "Flipkart Pay Later": [{ name: "Disney+ Hotstar", amount: 299, billingInDays: 11 }],
-  PostPe: [{ name: "Notion AI", amount: 830, billingInDays: 26 }],
-  "Credit Card": [
-    { name: "ChatGPT Plus", amount: 1660, billingInDays: 24 },
-    { name: "Notion AI", amount: 830, billingInDays: 26 }
-  ],
-  "Debit Card": [{ name: "Netflix", amount: 649, billingInDays: 4 }],
-  OneCard: [{ name: "Notion AI", amount: 830, billingInDays: 26 }],
-  Slice: [{ name: "ChatGPT Plus", amount: 1660, billingInDays: 24 }],
-  "Google Play": [
-    { name: "Netflix", amount: 649, billingInDays: 4 },
-    { name: "YouTube Premium", amount: 139, billingInDays: 10 }
-  ],
-  "Apple App Store": [
-    { name: "Spotify", amount: 119, billingInDays: 6 },
-    { name: "Apple Music", amount: 99, billingInDays: 14 }
-  ]
+  cards: ["Credit Card", "Debit Card", "OneCard", "Slice"],
+  appStore: ["Google Play", "Apple App Store"]
+};
+
+const CATEGORY_SUBSCRIPTIONS = {
+  upi: ["Jio Recharge", "Airtel Recharge", "Gold's Gym"],
+  wallet: ["Amazon Prime", "Swiggy One"],
+  payLater: ["Zomato Gold", "Blinkit Plus"],
+  cards: ["ChatGPT Plus", "Notion AI", "Cursor AI"],
+  appStore: {
+    "Google Play": ["YouTube Premium", "Google One"],
+    "Apple App Store": ["Spotify", "Apple Music"]
+  }
 };
 
 let latestSubscriptions = [];
@@ -118,6 +108,25 @@ function addDaysFromToday(days) {
   const date = new Date();
   date.setDate(date.getDate() + Number(days || 0));
   return date.toISOString().split("T")[0];
+}
+
+function getSubscriptionOptionsForGateway(gateway) {
+  if (GATEWAY_GROUP_MAP.upi.includes(gateway)) {
+    return CATEGORY_SUBSCRIPTIONS.upi;
+  }
+  if (GATEWAY_GROUP_MAP.wallet.includes(gateway)) {
+    return CATEGORY_SUBSCRIPTIONS.wallet;
+  }
+  if (GATEWAY_GROUP_MAP.payLater.includes(gateway)) {
+    return CATEGORY_SUBSCRIPTIONS.payLater;
+  }
+  if (GATEWAY_GROUP_MAP.cards.includes(gateway)) {
+    return CATEGORY_SUBSCRIPTIONS.cards;
+  }
+  if (GATEWAY_GROUP_MAP.appStore.includes(gateway)) {
+    return CATEGORY_SUBSCRIPTIONS.appStore[gateway] || [];
+  }
+  return [];
 }
 
 function escapeHtml(value) {
@@ -254,7 +263,7 @@ function renderUpcomingCharges(charges) {
 
 function renderSubscriptionOptions() {
   const selectedPlatform = addPlatformSelectEl.value;
-  const platformItems = SUBSCRIPTION_CATALOG[selectedPlatform] || [];
+  const subscriptionsForGateway = getSubscriptionOptionsForGateway(selectedPlatform);
   const existingNames = new Set(
     latestSubscriptions.map((subscription) => String(subscription.serviceName).toLowerCase())
   );
@@ -272,13 +281,17 @@ function renderSubscriptionOptions() {
   defaultOption.textContent = "Select subscription";
   addSubscriptionSelectEl.append(defaultOption);
 
-  platformItems.forEach((item) => {
+  subscriptionsForGateway.forEach((subscriptionName) => {
+    const details = SUBSCRIPTION_DETAILS[subscriptionName];
+    if (!details) {
+      return;
+    }
     const option = document.createElement("option");
-    option.value = item.name;
-    option.textContent = `${item.name} • ${formatMoney(item.amount)}`;
-    if (existingNames.has(item.name.toLowerCase())) {
+    option.value = subscriptionName;
+    option.textContent = `${subscriptionName} • ${formatMoney(details.amount)}`;
+    if (existingNames.has(subscriptionName.toLowerCase())) {
       option.disabled = true;
-      option.textContent = `${option.textContent} (Added)`;
+      option.textContent = `${option.textContent} — Already added`;
     }
     addSubscriptionSelectEl.append(option);
   });
@@ -368,17 +381,17 @@ subscriptionFormEl.addEventListener("submit", async (event) => {
   event.preventDefault();
   const selectedPlatform = addPlatformSelectEl.value;
   const selectedSubscription = addSubscriptionSelectEl.value;
-  const match = (SUBSCRIPTION_CATALOG[selectedPlatform] || []).find(
-    (item) => item.name === selectedSubscription
-  );
+  const availableSubscriptions = getSubscriptionOptionsForGateway(selectedPlatform);
+  const isValidSelection = availableSubscriptions.includes(selectedSubscription);
+  const match = SUBSCRIPTION_DETAILS[selectedSubscription];
 
-  if (!selectedPlatform || !selectedSubscription || !match) {
+  if (!selectedPlatform || !selectedSubscription || !isValidSelection || !match) {
     showStatus("Please select a valid platform and subscription.", "error");
     return;
   }
 
   const payload = {
-    serviceName: match.name,
+    serviceName: selectedSubscription,
     amount: match.amount,
     billingCycle: "Monthly",
     nextBillingDate: addDaysFromToday(match.billingInDays),
