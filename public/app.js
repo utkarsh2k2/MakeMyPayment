@@ -240,7 +240,7 @@ function renderSubscriptions(subscriptions) {
                   </button>`
                 : ""
             }
-            <button class="remove-btn" data-id="${subscription.id}" type="button">Manage</button>
+            <button class="remove-btn" data-id="${subscription.id}" type="button">Remove</button>
           </footer>
         </article>
       `;
