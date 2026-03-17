@@ -150,12 +150,19 @@ function getUpcomingSubscriptions(days = 7) {
 
   return subscriptions.filter((subscription) => {
     const billingDate = parseDateOnly(subscription.nextBillingDate);
-    return !subscription.isPaused && billingDate >= today && billingDate <= limit;
+    const isTrackedFixed =
+      subscription.category === "fixed" ? subscription.isTracked !== false : true;
+    return !subscription.isPaused && isTrackedFixed && billingDate >= today && billingDate <= limit;
   });
 }
 
 function buildInsights() {
-  const active = subscriptions.filter((s) => !s.isPaused);
+  const active = subscriptions.filter((s) => {
+    if (s.category === "fixed") {
+      return !s.isPaused && s.isTracked !== false;
+    }
+    return !s.isPaused;
+  });
   const activeMonthlySpend = active.reduce((sum, subscription) => {
     return sum + Number(subscription.amount || 0);
   }, 0);
@@ -172,7 +179,7 @@ function buildInsights() {
   const HIGH_RISK_WINDOW_DAYS = 5;
 
   const guardianUniverse = active.filter(
-    (s) => s.category === "fixed" && (s.type === "EMI" || s.type === "Insurance")
+    (s) => s.category === "fixed" && s.isTracked !== false && (s.type === "EMI" || s.type === "Insurance")
   );
   const highImpactDueSoon = guardianUniverse.filter((s) => {
     const due = parseDateOnly(s.nextBillingDate);
@@ -275,7 +282,8 @@ function createSubscriptionFromBill(bill) {
     cibilImpact: bill.cibilImpact || "high",
     mcc: bill.mcc || null,
     cancellationUrl: bill.cancellationUrl || null,
-    billingSource: bill.billingSource || "BBPS"
+    billingSource: bill.billingSource || "BBPS",
+    isTracked: true
   };
 
   return {
@@ -290,6 +298,13 @@ subscriptions.forEach((subscription) => {
   subscription.isPaused = Boolean(subscription.isPaused);
   subscription.sourceSystem = subscription.sourceSystem || deriveSourceSystem(subscription);
   subscription.controlType = subscription.controlType || deriveControlType(subscription);
+  if (subscription.category === "fixed") {
+    if (typeof subscription.isTracked === "undefined") {
+      subscription.isTracked = false;
+    }
+  } else if (typeof subscription.isTracked === "undefined") {
+    subscription.isTracked = true;
+  }
 });
 
 app.get("/api/subscriptions", (_req, res) => {
@@ -561,7 +576,11 @@ app.post("/api/fetched-bills/track", (req, res) => {
 
   selected.forEach((bill) => {
     const existing = findSubscriptionForBill(bill);
-    if (!existing) {
+    if (existing) {
+      if (existing.category === "fixed") {
+        existing.isTracked = true;
+      }
+    } else {
       const newSubscription = createSubscriptionFromBill(bill);
       subscriptions.push(newSubscription);
       createdCount += 1;

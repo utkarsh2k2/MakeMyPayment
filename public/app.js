@@ -312,19 +312,24 @@ function renderSubscriptionCard(subscription) {
 }
 
 function renderSubscriptions(subscriptions) {
-  const activeCount = subscriptions.filter((subscription) => !subscription.isPaused).length;
+  const activeCount = subscriptions.filter((subscription) => {
+    if (subscription.category === "fixed") {
+      return !subscription.isPaused && subscription.isTracked !== false;
+    }
+    return !subscription.isPaused;
+  }).length;
   subscriptionCountEl.textContent = `${activeCount} active`;
 
   const sorted = [...subscriptions].sort(
     (a, b) => new Date(a.nextBillingDate) - new Date(b.nextBillingDate)
   );
 
-  const fixed = sorted.filter((s) => s.category === "fixed");
+  const fixed = sorted.filter((s) => s.category === "fixed" && s.isTracked !== false);
   const lifestyle = sorted.filter((s) => s.category !== "fixed");
 
   fixedPanelEl.innerHTML = fixed.length
     ? fixed.map(renderSubscriptionCard).join("")
-    : '<p class="empty-state">No fixed obligations detected yet.</p>';
+    : '<p class="empty-state">No fixed obligations in Guardian yet. Use “Fetch my bills” to pull EMIs and insurance from your billers.</p>';
   lifestylePanelEl.innerHTML = lifestyle.length
     ? lifestyle.map(renderSubscriptionCard).join("")
     : '<p class="empty-state">No lifestyle subscriptions yet.</p>';
