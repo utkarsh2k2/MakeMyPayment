@@ -25,7 +25,7 @@ const subscriptions = [
   },
   {
     id: "gym-membership",
-    serviceName: "Gym Membership",
+    serviceName: "Gold's Gym",
     amount: 1800,
     billingCycle: "Monthly",
     nextBillingDate: addDays(today, 6),

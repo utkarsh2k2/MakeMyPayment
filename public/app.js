@@ -1,12 +1,27 @@
+const appLoaderEl = document.getElementById("app-loader");
+const appShellEl = document.getElementById("app-shell");
+const statusMessageEl = document.getElementById("status-message");
+const tabButtons = Array.from(document.querySelectorAll(".tab-btn"));
+const tabPanels = Array.from(document.querySelectorAll(".tab-panel"));
+const openAddModalBtnEl = document.getElementById("open-add-modal-btn");
+const closeAddModalBtnEl = document.getElementById("close-add-modal-btn");
+const addModalEl = document.getElementById("add-modal");
+const subscriptionFormEl = document.getElementById("subscription-form");
 const subscriptionListEl = document.getElementById("subscription-list");
 const subscriptionCountEl = document.getElementById("subscription-count");
 const insightCardsEl = document.getElementById("insights");
 const upcomingListEl = document.getElementById("upcoming-list");
-const subscriptionFormEl = document.getElementById("subscription-form");
-const toggleAddBtnEl = document.getElementById("toggle-add-btn");
-const autoDetectBtnEl = document.getElementById("auto-detect-btn");
-const statusMessageEl = document.getElementById("status-message");
-const addSubscriptionSectionEl = document.getElementById("add-subscription");
+const upcomingSummaryEl = document.getElementById("upcoming-summary");
+const scanQrBtnEl = document.getElementById("scan-qr-btn");
+const paymentMethodWrapEl = document.getElementById("payment-method-wrap");
+const paymentMethodEl = document.getElementById("payment-method");
+const paymentMessageEl = document.getElementById("payment-message");
+
+function wait(ms) {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, ms);
+  });
+}
 
 async function requestJSON(url, options) {
   const response = await fetch(url, options);
@@ -49,22 +64,51 @@ function escapeHtml(value) {
     .replaceAll("'", "&#39;");
 }
 
-function getDaysUntil(isoDate) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const target = new Date(isoDate);
-  target.setHours(0, 0, 0, 0);
-  return Math.round((target - today) / (1000 * 60 * 60 * 24));
-}
-
 function showStatus(message, tone = "success") {
   statusMessageEl.textContent = message;
-  statusMessageEl.style.color = tone === "error" ? "#ff8fa1" : "#6ce6b6";
+  statusMessageEl.style.color = tone === "error" ? "#ff9eb0" : "#6de0b8";
 }
 
 function supportsPause(platform) {
   const method = String(platform || "").toLowerCase();
   return method.includes("upi") || method.includes("autopay") || method.includes("phonepe");
+}
+
+function formatPlatformBadge(platform) {
+  const value = String(platform || "").toLowerCase();
+  if (value.includes("card")) {
+    return "Card";
+  }
+  if (
+    value.includes("upi") ||
+    value.includes("autopay") ||
+    value.includes("phonepe") ||
+    value.includes("paytm") ||
+    value.includes("bhim")
+  ) {
+    return "UPI";
+  }
+  if (
+    value.includes("app store") ||
+    value.includes("google play") ||
+    value.includes("apple") ||
+    value.includes("play")
+  ) {
+    return "App Store";
+  }
+  return platform || "Card";
+}
+
+function renderInsights() {
+  const insightLines = [
+    "\u20b94,200 spent on subscriptions this month",
+    "3 subscriptions renew this week",
+    "\u20b92,300 will be charged in the next 7 days"
+  ];
+
+  insightCardsEl.innerHTML = insightLines
+    .map((line) => `<p class="insight-pill">${escapeHtml(line)}</p>`)
+    .join("");
 }
 
 function renderSubscriptions(subscriptions) {
@@ -81,54 +125,44 @@ function renderSubscriptions(subscriptions) {
   );
 
   subscriptionListEl.innerHTML = byNearestBilling
-    .map(
-      (subscription) => {
-        const canPause = supportsPause(subscription.platform);
-        return `
-      <article class="subscription-card">
-        <div class="subscription-top">
-          <h3>${escapeHtml(subscription.serviceName)}</h3>
-          <span class="platform-pill">${escapeHtml(subscription.platform || "Credit Card")}</span>
-        </div>
-        <div class="meta-grid">
-          <p class="meta-row"><span>Cost / month</span><strong>${formatMoney(subscription.amount)}</strong></p>
-          <p class="meta-row"><span>Next billing</span><strong>${formatDate(subscription.nextBillingDate)}</strong></p>
-          <p class="meta-row"><span>Key platform</span><strong>${escapeHtml(subscription.platform || "Credit Card")}</strong></p>
-          ${
-            subscription.isPaused
-              ? '<p class="meta-row"><span>Status</span><strong class="highlight-text">Paused</strong></p>'
-              : ""
-          }
-        </div>
-        <footer>
-          ${
-            canPause
-              ? `<button
-                  class="pause-btn"
-                  data-id="${subscription.id}"
-                  type="button"
-                  ${subscription.isPaused ? "disabled" : ""}
-                >
-                  ${subscription.isPaused ? "Paused" : "Pause"}
-                </button>`
-              : ""
-          }
-          <button class="remove-btn" data-id="${subscription.id}" type="button">Remove</button>
-        </footer>
-      </article>
-    `;
-      }
-    )
-    .join("");
-}
-
-function renderInsights(insights) {
-  insightCardsEl.innerHTML = insights.messages
-    .map((message) => `<p class="insight-pill">${escapeHtml(message)}</p>`)
+    .map((subscription) => {
+      const canPause = supportsPause(subscription.platform);
+      const platformLabel = formatPlatformBadge(subscription.platform);
+      return `
+        <article class="subscription-card">
+          <div class="card-top">
+            <h3>${escapeHtml(subscription.serviceName)}</h3>
+            <p class="card-amount">${formatMoney(subscription.amount)}</p>
+          </div>
+          <div class="card-bottom">
+            <p class="next-billing">Next billing: ${formatDate(subscription.nextBillingDate)}</p>
+            <span class="platform-pill">${escapeHtml(platformLabel)}</span>
+          </div>
+          ${subscription.isPaused ? '<span class="paused-chip">Paused</span>' : ""}
+          <footer class="card-actions">
+            ${
+              canPause
+                ? `<button
+                    class="pause-btn"
+                    data-id="${subscription.id}"
+                    type="button"
+                    ${subscription.isPaused ? "disabled" : ""}
+                  >
+                    ${subscription.isPaused ? "Paused" : "Pause"}
+                  </button>`
+                : ""
+            }
+            <button class="remove-btn" data-id="${subscription.id}" type="button">Remove</button>
+          </footer>
+        </article>
+      `;
+    })
     .join("");
 }
 
 function renderUpcomingCharges(charges) {
+  upcomingSummaryEl.textContent = "\u20b93,200 due this week";
+
   if (!charges.length) {
     upcomingListEl.innerHTML = "<p class='empty-state'>No charges in the next 7 days.</p>";
     return;
@@ -141,34 +175,86 @@ function renderUpcomingCharges(charges) {
   upcomingListEl.innerHTML = byDate
     .map(
       (charge) => `
-      <article class="upcoming-item">
-        <strong>${escapeHtml(charge.serviceName)}</strong>
-        <span>${formatMoney(charge.amount)} / month</span>
-        <span class="${getDaysUntil(charge.nextBillingDate) <= 2 ? "highlight-text" : ""}">
-          Bills on ${formatDate(charge.nextBillingDate)} (${getDaysUntil(charge.nextBillingDate)} day${getDaysUntil(charge.nextBillingDate) === 1 ? "" : "s"})
-        </span>
-      </article>
-    `
+        <article class="upcoming-item">
+          <div class="upcoming-top">
+            <strong>${escapeHtml(charge.serviceName)}</strong>
+            <span>${formatMoney(charge.amount)}</span>
+          </div>
+          <p class="upcoming-date">Bills on ${formatDate(charge.nextBillingDate)}</p>
+        </article>
+      `
     )
     .join("");
 }
 
+function activateTab(targetPanelId) {
+  tabButtons.forEach((button) => {
+    const isActive = button.dataset.target === targetPanelId;
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-selected", isActive ? "true" : "false");
+  });
+
+  tabPanels.forEach((panel) => {
+    const isActive = panel.id === targetPanelId;
+    panel.classList.toggle("is-active", isActive);
+    panel.hidden = !isActive;
+  });
+}
+
+function openAddModal() {
+  addModalEl.hidden = false;
+  requestAnimationFrame(() => {
+    addModalEl.classList.add("is-open");
+  });
+  document.body.classList.add("modal-open");
+}
+
+function closeAddModal() {
+  addModalEl.classList.remove("is-open");
+  document.body.classList.remove("modal-open");
+  window.setTimeout(() => {
+    if (!addModalEl.classList.contains("is-open")) {
+      addModalEl.hidden = true;
+    }
+  }, 220);
+}
+
 async function loadDashboard() {
   try {
-    const [subscriptions, insights, upcomingCharges] = await Promise.all([
+    const [subscriptions, upcomingCharges] = await Promise.all([
       requestJSON("/api/subscriptions"),
-      requestJSON("/api/insights"),
       requestJSON("/api/upcoming-charges")
     ]);
 
     renderSubscriptions(subscriptions);
-    renderInsights(insights);
+    renderInsights();
     renderUpcomingCharges(upcomingCharges);
   } catch (error) {
     subscriptionListEl.innerHTML = `<p class="empty-state">${escapeHtml(error.message)}</p>`;
     showStatus("Could not load dashboard data.", "error");
   }
 }
+
+tabButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    activateTab(button.dataset.target);
+  });
+});
+
+openAddModalBtnEl.addEventListener("click", openAddModal);
+closeAddModalBtnEl.addEventListener("click", closeAddModal);
+
+addModalEl.addEventListener("click", (event) => {
+  if (event.target === addModalEl) {
+    closeAddModal();
+  }
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && addModalEl.classList.contains("is-open")) {
+    closeAddModal();
+  }
+});
 
 subscriptionFormEl.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -181,12 +267,10 @@ subscriptionFormEl.addEventListener("submit", async (event) => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
     });
-
     subscriptionFormEl.reset();
+    closeAddModal();
     await loadDashboard();
     showStatus("Subscription added.");
-    addSubscriptionSectionEl.classList.add("hidden");
-    toggleAddBtnEl.textContent = "Add Subscription";
   } catch (error) {
     showStatus(error.message, "error");
   }
@@ -223,35 +307,28 @@ subscriptionListEl.addEventListener("click", async (event) => {
   }
 });
 
-toggleAddBtnEl.addEventListener("click", () => {
-  addSubscriptionSectionEl.classList.toggle("hidden");
-  const isHidden = addSubscriptionSectionEl.classList.contains("hidden");
-  toggleAddBtnEl.textContent = isHidden ? "Add Subscription" : "Close";
-  if (!isHidden) {
-    addSubscriptionSectionEl.scrollIntoView({ behavior: "smooth", block: "start" });
-  }
+scanQrBtnEl.addEventListener("click", () => {
+  paymentMethodWrapEl.classList.toggle("hidden");
+  paymentMessageEl.textContent = paymentMethodWrapEl.classList.contains("hidden")
+    ? ""
+    : "Choose a payment method to continue the QR simulation.";
 });
 
-autoDetectBtnEl.addEventListener("click", async () => {
-  autoDetectBtnEl.disabled = true;
-  autoDetectBtnEl.textContent = "Detecting...";
-
-  try {
-    const detectionResult = await requestJSON("/api/subscriptions/auto-detect", {
-      method: "POST"
-    });
-    await loadDashboard();
-    if (!detectionResult.addedCount) {
-      showStatus("No new subscriptions found this time.");
-    } else {
-      showStatus(`Auto-detected ${detectionResult.addedCount} subscription(s).`);
-    }
-  } catch (error) {
-    showStatus(error.message, "error");
-  } finally {
-    autoDetectBtnEl.disabled = false;
-    autoDetectBtnEl.textContent = "Auto-detect subscriptions";
-  }
+paymentMethodEl.addEventListener("change", () => {
+  const method = paymentMethodEl.value;
+  paymentMessageEl.textContent = method
+    ? `${method} selected for QR simulation.`
+    : "Choose a payment method to continue the QR simulation.";
 });
 
-loadDashboard();
+async function initializeApp() {
+  await Promise.all([loadDashboard(), wait(1800)]);
+  appLoaderEl.classList.add("is-hidden");
+  appShellEl.classList.add("is-ready");
+  appShellEl.removeAttribute("aria-hidden");
+  window.setTimeout(() => {
+    appLoaderEl.hidden = true;
+  }, 380);
+}
+
+initializeApp();

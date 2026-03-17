@@ -20,7 +20,16 @@
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
-    <div class="app-shell">
+    <div id="app-loader" class="app-loader">
+      <div class="loader-card" role="status" aria-live="polite">
+        <div class="spinner" aria-hidden="true"></div>
+        <p class="loader-text">
+          Fetching your subscriptions<span class="dots" aria-hidden="true"><span></span><span></span><span></span></span>
+        </p>
+      </div>
+    </div>
+
+    <div id="app-shell" class="app-shell" aria-hidden="true">
       <header class="app-header">
         <div class="brand">
           <p class="eyebrow">Subscription dashboard</p>
@@ -28,75 +37,138 @@
           <p class="subtitle">Minimal tracking. Maximum clarity.</p>
         </div>
         <div class="header-actions">
-          <button id="auto-detect-btn" class="ghost-btn" type="button">
-            Auto-detect subscriptions
-          </button>
-          <button id="toggle-add-btn" class="primary-btn" type="button">
+          <button id="open-add-modal-btn" class="primary-btn" type="button">
             Add Subscription
           </button>
         </div>
+        <nav class="tab-nav" role="tablist" aria-label="Primary">
+          <button
+            class="tab-btn is-active"
+            id="tab-dashboard"
+            data-target="dashboard-panel"
+            type="button"
+            role="tab"
+            aria-controls="dashboard-panel"
+            aria-selected="true"
+          >
+            Dashboard
+          </button>
+          <button
+            class="tab-btn"
+            id="tab-payments"
+            data-target="payments-panel"
+            type="button"
+            role="tab"
+            aria-controls="payments-panel"
+            aria-selected="false"
+          >
+            Payments
+          </button>
+        </nav>
         <p id="status-message" class="status-message" role="status" aria-live="polite"></p>
       </header>
 
-      <main class="dashboard">
-        <section id="upcoming" class="panel upcoming-panel">
-          <div class="section-head">
-            <h2>Upcoming Charges</h2>
-            <span class="panel-note">Next 7 days</span>
-          </div>
-          <div id="upcoming-list" class="upcoming-list"></div>
+      <main class="tab-panels">
+        <section
+          id="dashboard-panel"
+          class="tab-panel is-active"
+          role="tabpanel"
+          aria-labelledby="tab-dashboard"
+        >
+          <section id="upcoming" class="panel upcoming-panel">
+            <div class="section-head">
+              <h2>Upcoming Charges</h2>
+              <span id="upcoming-summary" class="panel-note">₹3,200 due this week</span>
+            </div>
+            <div id="upcoming-list" class="upcoming-list"></div>
+          </section>
+
+          <section id="insights" class="insight-strip"></section>
+
+          <section class="panel">
+            <div class="section-head">
+              <h2>Your Subscriptions</h2>
+              <span id="subscription-count" class="badge">0 active</span>
+            </div>
+            <div id="subscription-list" class="card-list"></div>
+          </section>
         </section>
 
-        <section id="insights" class="insight-strip"></section>
-
-        <section id="dashboard" class="panel">
-          <div class="section-head">
-            <h2>Your Subscriptions</h2>
-            <span id="subscription-count" class="badge">0 active</span>
-          </div>
-          <div id="subscription-list" class="card-list"></div>
-        </section>
-
-        <section id="add-subscription" class="panel hidden">
-          <div class="section-head">
-            <h2>Add Subscription</h2>
-            <span class="panel-note">Manual entry</span>
-          </div>
-          <form id="subscription-form" class="form-card">
-            <label>
-              Service Name
-              <input
-                type="text"
-                name="serviceName"
-                placeholder="e.g. Notion Pro"
-                required
-              />
-            </label>
-            <label>
-              Cost per month (INR)
-              <input type="number" name="amount" min="1" step="1" required />
-            </label>
-            <label>
-              Next Billing Date
-              <input type="date" name="nextBillingDate" required />
-            </label>
-            <label>
-              Key Platform
-              <select name="platform" required>
-                <option value="Google Play">Google Play</option>
-                <option value="Apple App Store">Apple App Store</option>
-                <option value="UPI">UPI</option>
-                <option value="PhonePe">PhonePe</option>
-                <option value="PhonePe Autopay">PhonePe Autopay</option>
-                <option value="Credit Card">Credit Card</option>
-                <option value="Bank">Bank</option>
+        <section
+          id="payments-panel"
+          class="tab-panel"
+          role="tabpanel"
+          aria-labelledby="tab-payments"
+          hidden
+        >
+          <section class="panel payment-panel">
+            <div class="section-head">
+              <h2>Payment Launcher</h2>
+              <span class="panel-note">QR simulation</span>
+            </div>
+            <p class="panel-description">Start a quick payment flow with your preferred method.</p>
+            <div class="payment-actions">
+              <button id="scan-qr-btn" class="primary-btn" type="button">Scan QR</button>
+            </div>
+            <div id="payment-method-wrap" class="hidden">
+              <label for="payment-method">Choose payment method</label>
+              <select id="payment-method">
+                <option value="">Select a method</option>
+                <option>Google Pay</option>
+                <option>PhonePe</option>
+                <option>Paytm</option>
+                <option>BHIM UPI</option>
+                <option>Bank UPI</option>
+                <option>Credit/Debit Card</option>
               </select>
-            </label>
-            <input type="hidden" name="billingCycle" value="Monthly" />
-            <button type="submit" class="primary-btn">Save Subscription</button>
-          </form>
+            </div>
+            <p id="payment-message" class="muted"></p>
+          </section>
         </section>
       </main>
+    </div>
+
+    <div id="add-modal" class="modal-backdrop" hidden>
+      <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="add-modal-title">
+        <button id="close-add-modal-btn" class="icon-btn" type="button" aria-label="Close add subscription modal">
+          &times;
+        </button>
+        <h2 id="add-modal-title">Add Subscription</h2>
+        <p class="modal-subtitle">Manual entry for subscriptions that are not auto-detected.</p>
+        <form id="subscription-form" class="form-card">
+          <label>
+            Service Name
+            <input
+              type="text"
+              name="serviceName"
+              placeholder="e.g. Notion Pro"
+              required
+            />
+          </label>
+          <label>
+            Cost per month (INR)
+            <input type="number" name="amount" min="1" step="1" required />
+          </label>
+          <label>
+            Next Billing Date
+            <input type="date" name="nextBillingDate" required />
+          </label>
+          <label>
+            Key Platform
+            <select name="platform" required>
+              <option value="Google Play">Google Play</option>
+              <option value="Apple App Store">Apple App Store</option>
+              <option value="UPI">UPI</option>
+              <option value="PhonePe">PhonePe</option>
+              <option value="PhonePe Autopay">PhonePe Autopay</option>
+              <option value="Credit Card">Credit Card</option>
+              <option value="Bank">Bank</option>
+            </select>
+          </label>
+          <input type="hidden" name="billingCycle" value="Monthly" />
+          <button type="submit" class="primary-btn">Save Subscription</button>
+        </form>
+      </div>
     </div>
 
     <script src="/app.js"></script>
