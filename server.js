@@ -5,13 +5,29 @@ const { subscriptions } = require("./data/subscriptions");
 const app = express();
 const PORT = process.env.PORT || 3000;
 const PLATFORM_LABELS = [
+  "PhonePe",
   "Google Play",
   "Apple App Store",
-  "UPI",
-  "PhonePe",
-  "PhonePe Autopay",
+  "Google Pay",
+  "Paytm",
+  "BHIM",
+  "Amazon Pay UPI",
+  "CRED",
+  "Amazon Pay",
+  "Paytm Wallet",
+  "MobiKwik",
+  "Freecharge",
+  "Airtel Money",
+  "Amazon Pay Later",
+  "Simpl",
+  "LazyPay",
+  "MobiKwik Zip",
+  "Flipkart Pay Later",
+  "PostPe",
   "Credit Card",
-  "Bank"
+  "Debit Card",
+  "OneCard",
+  "Slice"
 ];
 const AUTO_DETECT_CATALOG = [
   {
@@ -30,7 +46,7 @@ const AUTO_DETECT_CATALOG = [
     serviceName: "Amazon Prime",
     amount: 299,
     nextBillingInDays: 8,
-    platform: "PhonePe Autopay"
+    platform: "Amazon Pay"
   }
 ];
 
@@ -45,17 +61,38 @@ function addDaysFromToday(days) {
 
 function detectPlatformFromService(serviceName) {
   const value = String(serviceName || "").toLowerCase();
-  if (value.includes("phonepe")) {
-    return value.includes("autopay") ? "PhonePe Autopay" : "PhonePe";
-  }
-  if (value.includes("icloud") || value.includes("apple")) {
-    return "Apple App Store";
-  }
-  if (value.includes("youtube") || value.includes("google") || value.includes("play")) {
+  if (value.includes("youtube") || value.includes("netflix") || value.includes("disney")) {
     return "Google Play";
   }
-  if (value.includes("gym") || value.includes("prime") || value.includes("swiggy")) {
-    return "UPI";
+  if (value.includes("spotify") || value.includes("apple")) {
+    return "Apple App Store";
+  }
+  if (value.includes("jio")) {
+    return "PhonePe";
+  }
+  if (value.includes("airtel")) {
+    return "Google Pay";
+  }
+  if (value.includes("gym")) {
+    return "BHIM";
+  }
+  if (value.includes("swiggy")) {
+    return "CRED";
+  }
+  if (value.includes("zomato")) {
+    return "Paytm";
+  }
+  if (value.includes("prime")) {
+    return "Amazon Pay";
+  }
+  if (value.includes("notion")) {
+    return "OneCard";
+  }
+  if (value.includes("chatgpt")) {
+    return "Credit Card";
+  }
+  if (value.includes("phonepe")) {
+    return "PhonePe";
   }
   return "Credit Card";
 }
@@ -70,7 +107,15 @@ function normalizePlatform(platform, serviceName) {
 
 function supportsPauseByPlatform(platform) {
   const method = String(platform || "").toLowerCase();
-  return method.includes("upi") || method.includes("autopay") || method.includes("phonepe");
+  return (
+    method.includes("upi") ||
+    method.includes("autopay") ||
+    method.includes("phonepe") ||
+    method.includes("google pay") ||
+    method.includes("paytm") ||
+    method.includes("bhim") ||
+    method.includes("cred")
+  );
 }
 
 function parseDateOnly(dateValue) {
