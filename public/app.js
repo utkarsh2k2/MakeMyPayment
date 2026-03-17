@@ -100,22 +100,14 @@ function formatPlatformBadge(platform) {
 }
 
 function renderInsights() {
-  const insightCards = [
-    { icon: "\u20b9", value: "\u20b94,200", label: "spent this month" },
-    { icon: "W", value: "3 renewals", label: "this week" },
-    { icon: "D", value: "\u20b92,300", label: "due in next 7 days" }
+  const insightLines = [
+    "\u20b94,200 spent on subscriptions this month",
+    "3 subscriptions renew this week",
+    "\u20b92,300 will be charged in the next 7 days"
   ];
 
-  insightCardsEl.innerHTML = insightCards
-    .map(
-      (card) => `
-        <article class="insight-card">
-          <p class="insight-icon">${escapeHtml(card.icon)}</p>
-          <p class="insight-value">${escapeHtml(card.value)}</p>
-          <p class="insight-label">${escapeHtml(card.label)}</p>
-        </article>
-      `
-    )
+  insightCardsEl.innerHTML = insightLines
+    .map((line) => `<p class="insight-pill">${escapeHtml(line)}</p>`)
     .join("");
 }
 

@@ -32,8 +32,14 @@
     <div id="app-shell" class="app-shell" aria-hidden="true">
       <header class="app-header">
         <div class="brand">
-          <p class="eyebrow">Subscriptions</p>
+          <p class="eyebrow">Subscription dashboard</p>
           <h1>Subscription Intelligence</h1>
+          <p class="subtitle">Minimal tracking. Maximum clarity.</p>
+        </div>
+        <div class="header-actions">
+          <button id="open-add-modal-btn" class="primary-btn" type="button">
+            Add Subscription
+          </button>
         </div>
         <nav class="tab-nav" role="tablist" aria-label="Primary">
           <button
@@ -72,9 +78,8 @@
           <section id="upcoming" class="panel upcoming-panel">
             <div class="section-head">
               <h2>Upcoming Charges</h2>
-              <span class="panel-note">Next 7 days</span>
+              <span id="upcoming-summary" class="panel-note">₹3,200 due this week</span>
             </div>
-            <p id="upcoming-summary" class="due-summary">₹3,200 due this week</p>
             <div id="upcoming-list" class="upcoming-list"></div>
           </section>
 
@@ -122,10 +127,6 @@
         </section>
       </main>
     </div>
-
-    <button id="open-add-modal-btn" class="fab-add-btn" type="button" aria-label="Add subscription">
-      + Add
-    </button>
 
     <div id="add-modal" class="modal-backdrop" hidden>
       <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="add-modal-title">
