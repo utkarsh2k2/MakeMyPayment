@@ -50,6 +50,23 @@ const AUTO_DETECT_CATALOG = [
   }
 ];
 
+// Mock telco bundles for Savings Wedge logic.
+const TELCO_BUNDLES = [
+  {
+    provider: "JioFiber",
+    planName: "JioFiber Postpaid",
+    includedServices: ["Netflix", "Amazon Prime", "Disney+ Hotstar"]
+  },
+  {
+    provider: "Airtel Thanks",
+    planName: "Airtel Thanks Platinum",
+    includedServices: ["Amazon Prime", "Disney+ Hotstar"]
+  }
+];
+
+// In-memory collection of \"fetched\" bills for the Fetch my Bills flow.
+let fetchedBills = [];
+
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
@@ -138,37 +155,96 @@ function getUpcomingSubscriptions(days = 7) {
 }
 
 function buildInsights() {
-  const totalMonthlySpend = subscriptions.reduce(
-    (sum, subscription) => sum + Number(subscription.amount || 0),
-    0
-  );
-  const activeMonthlySpend = subscriptions.reduce((sum, subscription) => {
-    if (subscription.isPaused) {
-      return sum;
-    }
+  const active = subscriptions.filter((s) => !s.isPaused);
+  const activeMonthlySpend = active.reduce((sum, subscription) => {
     return sum + Number(subscription.amount || 0);
   }, 0);
   const renewalsThisWeek = getUpcomingSubscriptions(7).length;
-  const previousMonthSpend = 3700;
-  const spendingIncreased = activeMonthlySpend > previousMonthSpend;
+
+  const duplicateSubs = active.filter((s) => s.isDuplicate);
+  const potentialSavings = duplicateSubs.reduce(
+    (sum, s) => sum + Number(s.amount || 0),
+    0
+  );
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const HIGH_RISK_WINDOW_DAYS = 5;
+
+  const guardianUniverse = active.filter(
+    (s) => s.category === "fixed" && (s.type === "EMI" || s.type === "Insurance")
+  );
+  const highImpactDueSoon = guardianUniverse.filter((s) => {
+    const due = parseDateOnly(s.nextBillingDate);
+    const diffDays = Math.round((due - today) / (1000 * 60 * 60 * 24));
+    return diffDays >= 0 && diffDays <= HIGH_RISK_WINDOW_DAYS && s.cibilImpact === "high";
+  });
+
+  const penaltyPerHighRisk = 20;
+  const baseScore = 100;
+  const rawScore = baseScore - highImpactDueSoon.length * penaltyPerHighRisk;
+  const creditSafetyScore = Math.max(40, Math.min(100, rawScore));
+
+  let creditLabel = "Healthy";
+  if (creditSafetyScore < 70) {
+    creditLabel = "At risk";
+  } else if (creditSafetyScore < 85) {
+    creditLabel = "Watchlist";
+  }
 
   return {
     totalMonthlySpend: activeMonthlySpend,
     renewalsThisWeek,
-    spendingIncreased,
+    potentialSavings,
+    creditSafetyScore,
+    creditLabel,
+    highImpactDueSoonCount: highImpactDueSoon.length,
     messages: [
       `You are paying \u20b9${activeMonthlySpend}/month in subscriptions.`,
       `${renewalsThisWeek} subscriptions renew this week.`,
-      spendingIncreased
-        ? "Your subscription spending increased."
-        : "Your subscription spending decreased."
+      highImpactDueSoon.length > 0
+        ? `${highImpactDueSoon.length} high impact EMI/insurance payments are due soon.`
+        : "No high impact EMI/insurance payments in the next few days."
     ]
   };
+}
+
+function deriveSourceSystem(subscription) {
+  const billingSource = String(subscription.billingSource || "").toUpperCase();
+  const rail = String(subscription.paymentRail || "").toUpperCase();
+
+  if (billingSource === "BBPS") return "BBPS";
+  if (billingSource === "BANK_EMI" || billingSource === "CARD_MANDATE") return "CARD_SI";
+  if (rail === "UPI_AUTOPAY") return "UPI_AUTO";
+  return "AA";
+}
+
+function deriveControlType(subscription) {
+  const rail = String(subscription.paymentRail || "").toUpperCase();
+  const billingSource = String(subscription.billingSource || "").toUpperCase();
+  const mcc = String(subscription.mcc || "");
+  const isIrrevocable = Boolean(subscription.isIrrevocable) || mcc === "7322";
+
+  if (isIrrevocable) {
+    return "BANK_ONLY";
+  }
+
+  if (rail === "UPI_AUTOPAY") {
+    return "USER_REVOCABLE";
+  }
+
+  if (billingSource === "BANK_EMI" || billingSource === "CARD_MANDATE") {
+    return "REDIRECT_LINK";
+  }
+
+  return "USER_REVOCABLE";
 }
 
 subscriptions.forEach((subscription) => {
   subscription.platform = normalizePlatform(subscription.platform, subscription.serviceName);
   subscription.isPaused = Boolean(subscription.isPaused);
+  subscription.sourceSystem = subscription.sourceSystem || deriveSourceSystem(subscription);
+  subscription.controlType = subscription.controlType || deriveControlType(subscription);
 });
 
 app.get("/api/subscriptions", (_req, res) => {
@@ -176,7 +252,15 @@ app.get("/api/subscriptions", (_req, res) => {
 });
 
 app.post("/api/subscriptions", (req, res) => {
-  const { serviceName, amount, billingCycle, nextBillingDate, platform } = req.body;
+  const {
+    serviceName,
+    amount,
+    billingCycle,
+    nextBillingDate,
+    platform,
+    category,
+    type
+  } = req.body;
 
   if (!serviceName || !amount || !nextBillingDate) {
     return res.status(400).json({ error: "Service, amount and billing date are required." });
@@ -192,14 +276,43 @@ app.post("/api/subscriptions", (req, res) => {
     return res.status(400).json({ error: "Invalid next billing date." });
   }
 
-  const newSubscription = {
+  const normalizedPlatform = normalizePlatform(platform, serviceName);
+
+  const isTelcoDuplicate = TELCO_BUNDLES.some((bundle) =>
+    bundle.includedServices.some(
+      (svc) => svc.toLowerCase() === String(serviceName).trim().toLowerCase()
+    )
+  );
+
+  const base = {
     id: `${Date.now()}-${Math.floor(Math.random() * 10000)}`,
     serviceName: String(serviceName).trim(),
     amount: parsedAmount,
     billingCycle: String(billingCycle || "Monthly").trim() || "Monthly",
     nextBillingDate,
-    platform: normalizePlatform(platform, serviceName),
-    isPaused: false
+    platform: normalizedPlatform,
+    isPaused: false,
+    category: category || "lifestyle",
+    type: type || "Subscription",
+    paymentRail:
+      normalizedPlatform && normalizedPlatform.toLowerCase().includes("upi")
+        ? "UPI_AUTOPAY"
+        : "CARD",
+    isIrrevocable: false,
+    isDuplicate: isTelcoDuplicate,
+    cibilImpact: "low",
+    mcc: null,
+    cancellationUrl: null,
+    billingSource:
+      normalizedPlatform && normalizedPlatform.toLowerCase().includes("upi")
+        ? "UPI_AUTOPAY"
+        : "CARD_MANDATE"
+  };
+
+  const newSubscription = {
+    ...base,
+    sourceSystem: deriveSourceSystem(base),
+    controlType: deriveControlType(base)
   };
 
   subscriptions.push(newSubscription);
@@ -213,15 +326,45 @@ app.post("/api/subscriptions/auto-detect", (_req, res) => {
 
   const detected = AUTO_DETECT_CATALOG.filter(
     (candidate) => !existingNames.has(candidate.serviceName.toLowerCase())
-  ).map((candidate) => ({
-    id: `${Date.now()}-${Math.floor(Math.random() * 10000)}`,
-    serviceName: candidate.serviceName,
-    amount: candidate.amount,
-    billingCycle: "Monthly",
-    nextBillingDate: addDaysFromToday(candidate.nextBillingInDays),
-    platform: candidate.platform,
-    isPaused: false
-  }));
+  ).map((candidate) => {
+    const normalizedPlatform = normalizePlatform(candidate.platform, candidate.serviceName);
+    const isTelcoDuplicate = TELCO_BUNDLES.some((bundle) =>
+      bundle.includedServices.some(
+        (svc) => svc.toLowerCase() === candidate.serviceName.toLowerCase()
+      )
+    );
+
+    const base = {
+      id: `${Date.now()}-${Math.floor(Math.random() * 10000)}`,
+      serviceName: candidate.serviceName,
+      amount: candidate.amount,
+      billingCycle: "Monthly",
+      nextBillingDate: addDaysFromToday(candidate.nextBillingInDays),
+      platform: normalizedPlatform,
+      isPaused: false,
+      category: "lifestyle",
+      type: "Subscription",
+      paymentRail:
+        normalizedPlatform && normalizedPlatform.toLowerCase().includes("upi")
+          ? "UPI_AUTOPAY"
+          : "CARD",
+      isIrrevocable: false,
+      isDuplicate: isTelcoDuplicate,
+      cibilImpact: "low",
+      mcc: null,
+      cancellationUrl: null,
+      billingSource:
+        normalizedPlatform && normalizedPlatform.toLowerCase().includes("upi")
+          ? "UPI_AUTOPAY"
+          : "CARD_MANDATE"
+    };
+
+    return {
+      ...base,
+      sourceSystem: deriveSourceSystem(base),
+      controlType: deriveControlType(base)
+    };
+  });
 
   subscriptions.push(...detected);
   return res.status(201).json({
@@ -258,6 +401,126 @@ app.patch("/api/subscriptions/:id/pause", (req, res) => {
 
   subscription.isPaused = true;
   return res.json(subscription);
+});
+
+app.patch("/api/subscriptions/:id/unpause", (req, res) => {
+  const { id } = req.params;
+  const subscription = subscriptions.find((item) => item.id === id);
+
+  if (!subscription) {
+    return res.status(404).json({ error: "Subscription not found." });
+  }
+
+  if (!supportsPauseByPlatform(subscription.platform)) {
+    return res.status(400).json({
+      error: "Unpause is available only for UPI or autopay subscriptions."
+    });
+  }
+
+  subscription.isPaused = false;
+  return res.json(subscription);
+});
+
+// Simulated NPCI UPI AutoPay revoke flow.
+app.patch("/api/subscriptions/:id/revoke-upi", (req, res) => {
+  const { id } = req.params;
+  const subscription = subscriptions.find((item) => item.id === id);
+
+  if (!subscription) {
+    return res.status(404).json({ error: "Subscription not found." });
+  }
+
+  const rail = String(subscription.paymentRail || "").toUpperCase();
+  if (rail !== "UPI_AUTOPAY") {
+    return res.status(400).json({
+      error: "Revoke is available only for UPI AutoPay mandates."
+    });
+  }
+
+  subscription.isPaused = true;
+  subscription.revokedViaUpi = true;
+
+  return res.json({
+    ...subscription,
+    message: "NPCI UPI AutoPay mandate revoke simulated."
+  });
+});
+
+// Simulated BBPS / Account Aggregator fetch-my-bills flow.
+app.post("/api/fetch-bills", (req, res) => {
+  const body = req.body || {};
+  const includeLoans = body.includeLoans !== false;
+  const includeUtilities = body.includeUtilities !== false;
+
+  const candidates = subscriptions.filter((subscription) => {
+    if (subscription.category !== "fixed") return false;
+    const type = String(subscription.type || "");
+    if (type === "EMI" || type === "Card") {
+      return includeLoans;
+    }
+    if (type === "Insurance" || type === "Utility") {
+      return includeUtilities;
+    }
+    return false;
+  });
+
+  fetchedBills = candidates.map((subscription) => ({
+    id: subscription.id,
+    serviceName: subscription.serviceName,
+    amount: subscription.amount,
+    billingCycle: subscription.billingCycle,
+    nextBillingDate: subscription.nextBillingDate,
+    category: subscription.category,
+    type: subscription.type,
+    cibilImpact: subscription.cibilImpact,
+    paymentRail: subscription.paymentRail,
+    billingSource: subscription.billingSource,
+    sourceSystem: subscription.sourceSystem,
+    controlType: subscription.controlType
+  }));
+
+  return res.json({
+    bills: fetchedBills,
+    addedCount: fetchedBills.length,
+    source: "BBPS_AA_SIMULATED"
+  });
+});
+
+// Returns the most recent set of fetched bills for review.
+app.get("/api/fetched-bills", (_req, res) => {
+  res.json(fetchedBills);
+});
+
+// Optional: GET /api/fetch-bills returns the latest fetch summary for manual tests.
+app.get("/api/fetch-bills", (_req, res) => {
+  res.json({
+    bills: fetchedBills,
+    addedCount: fetchedBills.length,
+    source: "BBPS_AA_SIMULATED"
+  });
+});
+
+// Track selected fetched bills and return a summary.
+app.post("/api/fetched-bills/track", (req, res) => {
+  const { billIds } = req.body || {};
+  if (!Array.isArray(billIds)) {
+    return res.status(400).json({ error: "billIds must be an array." });
+  }
+
+  const idSet = new Set(billIds.map((id) => String(id)));
+  const selected = fetchedBills.filter((bill) => idSet.has(String(bill.id)));
+
+  const trackedCount = selected.length;
+  const highImpactCount = selected.filter((bill) => bill.cibilImpact === "high").length;
+
+  return res.json({
+    trackedCount,
+    highImpactCount,
+    message:
+      trackedCount > 0
+        ? `Added ${trackedCount} bill${trackedCount !== 1 ? "s" : ""} to Guardian. Keep enough balance to protect your CIBIL.`
+        : "No bills were selected to track."
+  });
 });
 
 app.get("/api/upcoming-charges", (_req, res) => {

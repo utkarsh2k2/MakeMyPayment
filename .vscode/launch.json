@@ -1,0 +1,42 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Launch Server",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/server.js",
+      "cwd": "${workspaceFolder}",
+      "env": { "PORT": "3000" },
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Launch Server + Open Browser",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/server.js",
+      "cwd": "${workspaceFolder}",
+      "env": { "PORT": "3000" },
+      "console": "integratedTerminal",
+      "serverReadyAction": {
+        "action": "openExternally",
+        "pattern": "running on port ([0-9]+)",
+        "uriFormat": "http://localhost:%s/"
+      }
+    },
+    {
+      "name": "Launch Server + Debug in Chrome",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/server.js",
+      "cwd": "${workspaceFolder}",
+      "env": { "PORT": "3000" },
+      "console": "integratedTerminal",
+      "serverReadyAction": {
+        "action": "debugWithChrome",
+        "pattern": "running on port ([0-9]+)",
+        "uriFormat": "http://localhost:%s/"
+      }
+    }
+  ]
+}
