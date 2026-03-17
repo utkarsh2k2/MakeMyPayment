@@ -1,8 +1,8 @@
 const appLoaderEl = document.getElementById("app-loader");
 const appShellEl = document.getElementById("app-shell");
 const statusMessageEl = document.getElementById("status-message");
-const tabButtons = Array.from(document.querySelectorAll(".tab-btn"));
-const tabPanels = Array.from(document.querySelectorAll(".tab-panel"));
+const navButtons = Array.from(document.querySelectorAll(".bottom-tab-btn"));
+const appScreens = Array.from(document.querySelectorAll(".app-screen"));
 const openAddModalBtnEl = document.getElementById("open-add-modal-btn");
 const closeAddModalBtnEl = document.getElementById("close-add-modal-btn");
 const addModalEl = document.getElementById("add-modal");
@@ -12,6 +12,9 @@ const subscriptionCountEl = document.getElementById("subscription-count");
 const insightCardsEl = document.getElementById("insights");
 const upcomingListEl = document.getElementById("upcoming-list");
 const upcomingSummaryEl = document.getElementById("upcoming-summary");
+const payUsingQrBtnEl = document.getElementById("pay-using-qr-btn");
+const quickQrTriggers = Array.from(document.querySelectorAll("[data-action='open-qr']"));
+const payOptionButtons = Array.from(document.querySelectorAll(".pay-option-btn"));
 const scanQrBtnEl = document.getElementById("scan-qr-btn");
 const paymentMethodWrapEl = document.getElementById("payment-method-wrap");
 const paymentMethodEl = document.getElementById("payment-method");
@@ -187,18 +190,29 @@ function renderUpcomingCharges(charges) {
     .join("");
 }
 
-function activateTab(targetPanelId) {
-  tabButtons.forEach((button) => {
-    const isActive = button.dataset.target === targetPanelId;
+function activateScreen(screenId) {
+  navButtons.forEach((button) => {
+    const isActive = button.dataset.screen === screenId;
     button.classList.toggle("is-active", isActive);
     button.setAttribute("aria-selected", isActive ? "true" : "false");
   });
 
-  tabPanels.forEach((panel) => {
-    const isActive = panel.id === targetPanelId;
-    panel.classList.toggle("is-active", isActive);
-    panel.hidden = !isActive;
+  appScreens.forEach((screen) => {
+    const isActive = screen.id === screenId;
+    screen.classList.toggle("is-active", isActive);
+    screen.hidden = !isActive;
   });
+}
+
+function showQrFlow(selectedMethod = "") {
+  paymentMethodWrapEl.classList.remove("hidden");
+  if (selectedMethod) {
+    paymentMethodEl.value = selectedMethod;
+  }
+  const method = paymentMethodEl.value || selectedMethod;
+  paymentMessageEl.textContent = method
+    ? `${method} selected for QR simulation.`
+    : "Choose a payment method to continue the QR simulation.";
 }
 
 function openAddModal() {
@@ -235,9 +249,9 @@ async function loadDashboard() {
   }
 }
 
-tabButtons.forEach((button) => {
+navButtons.forEach((button) => {
   button.addEventListener("click", () => {
-    activateTab(button.dataset.target);
+    activateScreen(button.dataset.screen);
   });
 });
 
@@ -271,6 +285,7 @@ subscriptionFormEl.addEventListener("submit", async (event) => {
     closeAddModal();
     await loadDashboard();
     showStatus("Subscription added.");
+    activateScreen("subscriptions-screen");
   } catch (error) {
     showStatus(error.message, "error");
   }
@@ -307,11 +322,24 @@ subscriptionListEl.addEventListener("click", async (event) => {
   }
 });
 
+payUsingQrBtnEl.addEventListener("click", () => {
+  showQrFlow();
+});
+
 scanQrBtnEl.addEventListener("click", () => {
-  paymentMethodWrapEl.classList.toggle("hidden");
-  paymentMessageEl.textContent = paymentMethodWrapEl.classList.contains("hidden")
-    ? ""
-    : "Choose a payment method to continue the QR simulation.";
+  showQrFlow();
+});
+
+quickQrTriggers.forEach((trigger) => {
+  trigger.addEventListener("click", () => {
+    showQrFlow();
+  });
+});
+
+payOptionButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    showQrFlow(button.dataset.method || "");
+  });
 });
 
 paymentMethodEl.addEventListener("change", () => {
@@ -323,6 +351,7 @@ paymentMethodEl.addEventListener("change", () => {
 
 async function initializeApp() {
   await Promise.all([loadDashboard(), wait(1800)]);
+  activateScreen("home-screen");
   appLoaderEl.classList.add("is-hidden");
   appShellEl.classList.add("is-ready");
   appShellEl.removeAttribute("aria-hidden");
