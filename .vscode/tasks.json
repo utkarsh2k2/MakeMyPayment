@@ -1,0 +1,40 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Start Server",
+      "type": "shell",
+      "command": "npm start",
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": { "PORT": "3000" }
+      },
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": { "regexp": "^$" },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".",
+          "endsPattern": "running on port"
+        }
+      },
+      "presentation": { "reveal": "always", "panel": "new" }
+    },
+    {
+      "label": "Open Local Preview",
+      "type": "shell",
+      "command": "start http://localhost:3000",
+      "windows": { "command": "start http://localhost:3000" },
+      "osx": { "command": "open http://localhost:3000" },
+      "linux": { "command": "xdg-open http://localhost:3000" },
+      "dependsOn": "Start Server",
+      "dependsOrder": "sequence",
+      "presentation": { "reveal": "silent" }
+    },
+    {
+      "label": "Preview: Server + Browser",
+      "dependsOn": ["Start Server", "Open Local Preview"],
+      "dependsOrder": "sequence"
+    }
+  ]
+}
