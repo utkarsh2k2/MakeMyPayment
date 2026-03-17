@@ -6,19 +6,14 @@ const appScreens = Array.from(document.querySelectorAll(".app-screen"));
 const openAddModalBtnEl = document.getElementById("open-add-modal-btn");
 const closeAddModalBtnEl = document.getElementById("close-add-modal-btn");
 const addModalEl = document.getElementById("add-modal");
+const viewSubscriptionsBtnEl = document.getElementById("view-subscriptions-btn");
+const homeActiveSubtextEl = document.getElementById("home-active-subtext");
 const subscriptionFormEl = document.getElementById("subscription-form");
 const subscriptionListEl = document.getElementById("subscription-list");
 const subscriptionCountEl = document.getElementById("subscription-count");
 const insightCardsEl = document.getElementById("insights");
 const upcomingListEl = document.getElementById("upcoming-list");
 const upcomingSummaryEl = document.getElementById("upcoming-summary");
-const payUsingQrBtnEl = document.getElementById("pay-using-qr-btn");
-const quickQrTriggers = Array.from(document.querySelectorAll("[data-action='open-qr']"));
-const payOptionButtons = Array.from(document.querySelectorAll(".pay-option-btn"));
-const scanQrBtnEl = document.getElementById("scan-qr-btn");
-const paymentMethodWrapEl = document.getElementById("payment-method-wrap");
-const paymentMethodEl = document.getElementById("payment-method");
-const paymentMessageEl = document.getElementById("payment-message");
 
 function wait(ms) {
   return new Promise((resolve) => {
@@ -80,7 +75,7 @@ function supportsPause(platform) {
 function formatPlatformBadge(platform) {
   const value = String(platform || "").toLowerCase();
   if (value.includes("card")) {
-    return "Card";
+    return "Card Auto-debit";
   }
   if (
     value.includes("upi") ||
@@ -89,7 +84,7 @@ function formatPlatformBadge(platform) {
     value.includes("paytm") ||
     value.includes("bhim")
   ) {
-    return "UPI";
+    return "UPI AutoPay";
   }
   if (
     value.includes("app store") ||
@@ -97,16 +92,16 @@ function formatPlatformBadge(platform) {
     value.includes("apple") ||
     value.includes("play")
   ) {
-    return "App Store";
+    return "App Store Billing";
   }
-  return platform || "Card";
+  return "UPI AutoPay";
 }
 
 function renderInsights() {
   const insightLines = [
-    "\u20b94,200 spent on subscriptions this month",
-    "3 subscriptions renew this week",
-    "\u20b92,300 will be charged in the next 7 days"
+    "\u20b95,800 spent monthly on subscriptions",
+    "3 subscriptions renewing this week",
+    "2 subscriptions unused recently"
   ];
 
   insightCardsEl.innerHTML = insightLines
@@ -151,11 +146,11 @@ function renderSubscriptions(subscriptions) {
                     type="button"
                     ${subscription.isPaused ? "disabled" : ""}
                   >
-                    ${subscription.isPaused ? "Paused" : "Pause"}
+                    ${subscription.isPaused ? "Paused" : "Pause Auto-debit"}
                   </button>`
                 : ""
             }
-            <button class="remove-btn" data-id="${subscription.id}" type="button">Remove</button>
+            <button class="remove-btn" data-id="${subscription.id}" type="button">Manage</button>
           </footer>
         </article>
       `;
@@ -204,17 +199,6 @@ function activateScreen(screenId) {
   });
 }
 
-function showQrFlow(selectedMethod = "") {
-  paymentMethodWrapEl.classList.remove("hidden");
-  if (selectedMethod) {
-    paymentMethodEl.value = selectedMethod;
-  }
-  const method = paymentMethodEl.value || selectedMethod;
-  paymentMessageEl.textContent = method
-    ? `${method} selected for QR simulation.`
-    : "Choose a payment method to continue the QR simulation.";
-}
-
 function openAddModal() {
   addModalEl.hidden = false;
   requestAnimationFrame(() => {
@@ -243,6 +227,8 @@ async function loadDashboard() {
     renderSubscriptions(subscriptions);
     renderInsights();
     renderUpcomingCharges(upcomingCharges);
+    const activeCount = subscriptions.filter((subscription) => !subscription.isPaused).length;
+    homeActiveSubtextEl.textContent = `Across ${activeCount} active subscriptions`;
   } catch (error) {
     subscriptionListEl.innerHTML = `<p class="empty-state">${escapeHtml(error.message)}</p>`;
     showStatus("Could not load dashboard data.", "error");
@@ -257,6 +243,9 @@ navButtons.forEach((button) => {
 
 openAddModalBtnEl.addEventListener("click", openAddModal);
 closeAddModalBtnEl.addEventListener("click", closeAddModal);
+viewSubscriptionsBtnEl.addEventListener("click", () => {
+  activateScreen("subscriptions-screen");
+});
 
 addModalEl.addEventListener("click", (event) => {
   if (event.target === addModalEl) {
@@ -316,37 +305,10 @@ subscriptionListEl.addEventListener("click", async (event) => {
       method: "DELETE"
     });
     await loadDashboard();
-    showStatus("Subscription removed.");
+    showStatus("Subscription management updated.");
   } catch (error) {
     showStatus(error.message, "error");
   }
-});
-
-payUsingQrBtnEl.addEventListener("click", () => {
-  showQrFlow();
-});
-
-scanQrBtnEl.addEventListener("click", () => {
-  showQrFlow();
-});
-
-quickQrTriggers.forEach((trigger) => {
-  trigger.addEventListener("click", () => {
-    showQrFlow();
-  });
-});
-
-payOptionButtons.forEach((button) => {
-  button.addEventListener("click", () => {
-    showQrFlow(button.dataset.method || "");
-  });
-});
-
-paymentMethodEl.addEventListener("change", () => {
-  const method = paymentMethodEl.value;
-  paymentMessageEl.textContent = method
-    ? `${method} selected for QR simulation.`
-    : "Choose a payment method to continue the QR simulation.";
 });
 
 async function initializeApp() {
