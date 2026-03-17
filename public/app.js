@@ -9,11 +9,62 @@ const addModalEl = document.getElementById("add-modal");
 const viewSubscriptionsBtnEl = document.getElementById("view-subscriptions-btn");
 const homeActiveSubtextEl = document.getElementById("home-active-subtext");
 const subscriptionFormEl = document.getElementById("subscription-form");
+const addPlatformSelectEl = document.getElementById("add-platform-select");
+const addSubscriptionSelectEl = document.getElementById("add-subscription-select");
 const subscriptionListEl = document.getElementById("subscription-list");
 const subscriptionCountEl = document.getElementById("subscription-count");
 const insightCardsEl = document.getElementById("insights");
 const upcomingListEl = document.getElementById("upcoming-list");
 const upcomingSummaryEl = document.getElementById("upcoming-summary");
+const scanQrBtnEl = document.getElementById("scan-qr-btn");
+const paymentMethodWrapEl = document.getElementById("payment-method-wrap");
+const paymentMethodEl = document.getElementById("payment-method");
+const paymentMessageEl = document.getElementById("payment-message");
+
+const SUBSCRIPTION_DETAILS = {
+  "YouTube Premium": { amount: 139, billingInDays: 10 },
+  "Google One": { amount: 130, billingInDays: 14 },
+  Spotify: { amount: 119, billingInDays: 6 },
+  "Apple Music": { amount: 99, billingInDays: 16 },
+  "Jio Recharge": { amount: 399, billingInDays: 8 },
+  "Airtel Recharge": { amount: 349, billingInDays: 12 },
+  "Gold's Gym": { amount: 1800, billingInDays: 13 },
+  "Amazon Prime": { amount: 299, billingInDays: 7 },
+  "Swiggy One": { amount: 149, billingInDays: 11 },
+  "Zomato Gold": { amount: 149, billingInDays: 9 },
+  "Blinkit Plus": { amount: 199, billingInDays: 15 },
+  "ChatGPT Plus": { amount: 1660, billingInDays: 24 },
+  "Notion AI": { amount: 830, billingInDays: 26 },
+  "Cursor AI": { amount: 1632, billingInDays: 20 }
+};
+
+const GATEWAY_GROUP_MAP = {
+  upi: ["PhonePe", "Google Pay", "Paytm", "BHIM", "Amazon Pay UPI", "CRED"],
+  wallet: ["Amazon Pay", "Paytm Wallet", "MobiKwik", "Freecharge", "Airtel Money"],
+  payLater: [
+    "Amazon Pay Later",
+    "Simpl",
+    "LazyPay",
+    "MobiKwik Zip",
+    "Flipkart Pay Later",
+    "PostPe"
+  ],
+  cards: ["Credit Card", "Debit Card", "OneCard", "Slice"],
+  appStore: ["Google Play", "Apple App Store"]
+};
+
+const CATEGORY_SUBSCRIPTIONS = {
+  upi: ["Jio Recharge", "Airtel Recharge", "Gold's Gym"],
+  wallet: ["Amazon Prime", "Swiggy One"],
+  payLater: ["Zomato Gold", "Blinkit Plus"],
+  cards: ["ChatGPT Plus", "Notion AI", "Cursor AI"],
+  appStore: {
+    "Google Play": ["YouTube Premium", "Google One"],
+    "Apple App Store": ["Spotify", "Apple Music"]
+  }
+};
+
+let latestSubscriptions = [];
 
 function wait(ms) {
   return new Promise((resolve) => {
@@ -53,6 +104,42 @@ function formatMoney(amount) {
   return `\u20b9${Number(amount).toLocaleString("en-IN")}`;
 }
 
+function addDaysFromToday(days) {
+  const date = new Date();
+  date.setDate(date.getDate() + Number(days || 0));
+  return date.toISOString().split("T")[0];
+}
+
+function getSubscriptionOptionsForGateway(gateway) {
+  if (GATEWAY_GROUP_MAP.upi.includes(gateway)) {
+    return CATEGORY_SUBSCRIPTIONS.upi;
+  }
+  if (GATEWAY_GROUP_MAP.wallet.includes(gateway)) {
+    return CATEGORY_SUBSCRIPTIONS.wallet;
+  }
+  if (GATEWAY_GROUP_MAP.payLater.includes(gateway)) {
+    return CATEGORY_SUBSCRIPTIONS.payLater;
+  }
+  if (GATEWAY_GROUP_MAP.cards.includes(gateway)) {
+    return CATEGORY_SUBSCRIPTIONS.cards;
+  }
+  if (GATEWAY_GROUP_MAP.appStore.includes(gateway)) {
+    return CATEGORY_SUBSCRIPTIONS.appStore[gateway] || [];
+  }
+  return [];
+}
+
+function formatBillingAmount(amount, billingCycle) {
+  const cycle = String(billingCycle || "").toLowerCase();
+  const suffix =
+    cycle.includes("month") || cycle === ""
+      ? "/month"
+      : cycle.includes("year")
+      ? "/year"
+      : "";
+  return `${formatMoney(amount)}${suffix}`;
+}
+
 function escapeHtml(value) {
   return String(value)
     .replaceAll("&", "&amp;")
@@ -69,32 +156,32 @@ function showStatus(message, tone = "success") {
 
 function supportsPause(platform) {
   const method = String(platform || "").toLowerCase();
-  return method.includes("upi") || method.includes("autopay") || method.includes("phonepe");
+  return (
+    method.includes("upi") ||
+    method.includes("autopay") ||
+    method.includes("phonepe") ||
+    method.includes("google pay") ||
+    method.includes("paytm") ||
+    method.includes("bhim") ||
+    method.includes("cred")
+  );
 }
 
 function formatPlatformBadge(platform) {
-  const value = String(platform || "").toLowerCase();
-  if (value.includes("card")) {
-    return "Card Auto-debit";
+  const value = String(platform || "").trim();
+  if (!value) {
+    return "Credit Card";
   }
-  if (
-    value.includes("upi") ||
-    value.includes("autopay") ||
-    value.includes("phonepe") ||
-    value.includes("paytm") ||
-    value.includes("bhim")
-  ) {
-    return "UPI AutoPay";
+  if (value === "UPI") {
+    return "PhonePe";
   }
-  if (
-    value.includes("app store") ||
-    value.includes("google play") ||
-    value.includes("apple") ||
-    value.includes("play")
-  ) {
-    return "App Store Billing";
+  if (value === "Card") {
+    return "Credit Card";
   }
-  return "UPI AutoPay";
+  if (value === "App Store") {
+    return "Google Play";
+  }
+  return value;
 }
 
 function renderInsights() {
@@ -130,7 +217,10 @@ function renderSubscriptions(subscriptions) {
         <article class="subscription-card">
           <div class="card-top">
             <h3>${escapeHtml(subscription.serviceName)}</h3>
-            <p class="card-amount">${formatMoney(subscription.amount)}</p>
+            <p class="card-amount">${formatBillingAmount(
+              subscription.amount,
+              subscription.billingCycle
+            )}</p>
           </div>
           <div class="card-bottom">
             <p class="next-billing">Next billing: ${formatDate(subscription.nextBillingDate)}</p>
@@ -176,13 +266,51 @@ function renderUpcomingCharges(charges) {
         <article class="upcoming-item">
           <div class="upcoming-top">
             <strong>${escapeHtml(charge.serviceName)}</strong>
-            <span>${formatMoney(charge.amount)}</span>
+            <span>${formatBillingAmount(charge.amount, charge.billingCycle)}</span>
           </div>
           <p class="upcoming-date">Bills on ${formatDate(charge.nextBillingDate)}</p>
         </article>
       `
     )
     .join("");
+}
+
+function renderSubscriptionOptions() {
+  const selectedPlatform = addPlatformSelectEl.value;
+  const subscriptionsForGateway = getSubscriptionOptionsForGateway(selectedPlatform);
+  const existingNames = new Set(
+    latestSubscriptions.map((subscription) => String(subscription.serviceName).toLowerCase())
+  );
+
+  addSubscriptionSelectEl.innerHTML = "";
+
+  if (!selectedPlatform) {
+    addSubscriptionSelectEl.disabled = true;
+    addSubscriptionSelectEl.innerHTML = "<option value=''>Select platform first</option>";
+    return;
+  }
+
+  const defaultOption = document.createElement("option");
+  defaultOption.value = "";
+  defaultOption.textContent = "Select subscription";
+  addSubscriptionSelectEl.append(defaultOption);
+
+  subscriptionsForGateway.forEach((subscriptionName) => {
+    const details = SUBSCRIPTION_DETAILS[subscriptionName];
+    if (!details) {
+      return;
+    }
+    const option = document.createElement("option");
+    option.value = subscriptionName;
+    option.textContent = `${subscriptionName} • ${formatMoney(details.amount)}`;
+    if (existingNames.has(subscriptionName.toLowerCase())) {
+      option.disabled = true;
+      option.textContent = `${option.textContent} — Already added`;
+    }
+    addSubscriptionSelectEl.append(option);
+  });
+
+  addSubscriptionSelectEl.disabled = false;
 }
 
 function activateScreen(screenId) {
@@ -205,6 +333,8 @@ function openAddModal() {
     addModalEl.classList.add("is-open");
   });
   document.body.classList.add("modal-open");
+  addPlatformSelectEl.value = "";
+  renderSubscriptionOptions();
 }
 
 function closeAddModal() {
@@ -223,6 +353,7 @@ async function loadDashboard() {
       requestJSON("/api/subscriptions"),
       requestJSON("/api/upcoming-charges")
     ]);
+    latestSubscriptions = subscriptions;
 
     renderSubscriptions(subscriptions);
     renderInsights();
@@ -246,6 +377,7 @@ closeAddModalBtnEl.addEventListener("click", closeAddModal);
 viewSubscriptionsBtnEl.addEventListener("click", () => {
   activateScreen("subscriptions-screen");
 });
+addPlatformSelectEl.addEventListener("change", renderSubscriptionOptions);
 
 addModalEl.addEventListener("click", (event) => {
   if (event.target === addModalEl) {
@@ -261,8 +393,24 @@ document.addEventListener("keydown", (event) => {
 
 subscriptionFormEl.addEventListener("submit", async (event) => {
   event.preventDefault();
-  const formData = new FormData(subscriptionFormEl);
-  const payload = Object.fromEntries(formData.entries());
+  const selectedPlatform = addPlatformSelectEl.value;
+  const selectedSubscription = addSubscriptionSelectEl.value;
+  const availableSubscriptions = getSubscriptionOptionsForGateway(selectedPlatform);
+  const isValidSelection = availableSubscriptions.includes(selectedSubscription);
+  const match = SUBSCRIPTION_DETAILS[selectedSubscription];
+
+  if (!selectedPlatform || !selectedSubscription || !isValidSelection || !match) {
+    showStatus("Please select a valid platform and subscription.", "error");
+    return;
+  }
+
+  const payload = {
+    serviceName: selectedSubscription,
+    amount: match.amount,
+    billingCycle: "Monthly",
+    nextBillingDate: addDaysFromToday(match.billingInDays),
+    platform: selectedPlatform
+  };
 
   try {
     await requestJSON("/api/subscriptions", {
@@ -273,6 +421,7 @@ subscriptionFormEl.addEventListener("submit", async (event) => {
     subscriptionFormEl.reset();
     closeAddModal();
     await loadDashboard();
+    renderSubscriptionOptions();
     showStatus("Subscription added.");
     activateScreen("subscriptions-screen");
   } catch (error) {
@@ -309,6 +458,19 @@ subscriptionListEl.addEventListener("click", async (event) => {
   } catch (error) {
     showStatus(error.message, "error");
   }
+});
+
+scanQrBtnEl.addEventListener("click", () => {
+  paymentMethodWrapEl.classList.toggle("hidden");
+  paymentMessageEl.textContent = paymentMethodWrapEl.classList.contains("hidden")
+    ? ""
+    : "Select a payment method to simulate QR transfer.";
+});
+
+paymentMethodEl.addEventListener("change", () => {
+  paymentMessageEl.textContent = paymentMethodEl.value
+    ? `${paymentMethodEl.value} selected for QR simulation.`
+    : "Select a payment method to simulate QR transfer.";
 });
 
 async function initializeApp() {

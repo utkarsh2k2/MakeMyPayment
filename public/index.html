@@ -56,6 +56,40 @@
               View Subscriptions
             </button>
           </section>
+
+          <section class="panel qr-panel">
+            <div class="section-head">
+              <h2>QR Payment Simulation</h2>
+              <span class="panel-note">Optional</span>
+            </div>
+            <div class="payment-actions">
+              <button id="scan-qr-btn" class="ghost-btn" type="button">Scan QR</button>
+            </div>
+            <div id="payment-method-wrap" class="hidden">
+              <label for="payment-method">Choose payment method</label>
+              <select id="payment-method">
+                <option value="">Select a method</option>
+                <optgroup label="UPI Apps">
+                  <option>PhonePe</option>
+                  <option>Google Pay</option>
+                  <option>Paytm</option>
+                  <option>BHIM</option>
+                </optgroup>
+                <optgroup label="Wallets">
+                  <option>Amazon Pay</option>
+                </optgroup>
+                <optgroup label="Pay Later">
+                  <option>Amazon Pay Later</option>
+                  <option>Simpl</option>
+                  <option>LazyPay</option>
+                </optgroup>
+                <optgroup label="Cards">
+                  <option>Credit Card</option>
+                </optgroup>
+              </select>
+            </div>
+            <p id="payment-message" class="muted"></p>
+          </section>
         </section>
 
         <section
@@ -146,39 +180,55 @@
           &times;
         </button>
         <h2 id="add-modal-title">Add Subscription</h2>
-        <p class="modal-subtitle">Manual entry for subscriptions that are not auto-detected.</p>
+        <p class="modal-subtitle">Select payment gateway and subscription. Billing details are auto-filled.</p>
         <form id="subscription-form" class="form-card">
           <label>
-            Service Name
-            <input
-              type="text"
-              name="serviceName"
-              placeholder="e.g. Notion Pro"
-              required
-            />
-          </label>
-          <label>
-            Cost per month (INR)
-            <input type="number" name="amount" min="1" step="1" required />
-          </label>
-          <label>
-            Next Billing Date
-            <input type="date" name="nextBillingDate" required />
-          </label>
-          <label>
-            Key Platform
-            <select name="platform" required>
-              <option value="Google Play">Google Play</option>
-              <option value="Apple App Store">Apple App Store</option>
-              <option value="UPI">UPI</option>
-              <option value="PhonePe">PhonePe</option>
-              <option value="PhonePe Autopay">PhonePe Autopay</option>
-              <option value="Credit Card">Credit Card</option>
-              <option value="Bank">Bank</option>
+            Payment Gateway
+            <select id="add-platform-select" name="platform" required>
+              <option value="">Select payment gateway</option>
+              <optgroup label="UPI Apps">
+                <option>PhonePe</option>
+                <option>Google Pay</option>
+                <option>Paytm</option>
+                <option>BHIM</option>
+                <option>Amazon Pay UPI</option>
+                <option>CRED</option>
+              </optgroup>
+              <optgroup label="Wallets">
+                <option>Amazon Pay</option>
+                <option>Paytm Wallet</option>
+                <option>MobiKwik</option>
+                <option>Freecharge</option>
+                <option>Airtel Money</option>
+              </optgroup>
+              <optgroup label="Pay Later">
+                <option>Amazon Pay Later</option>
+                <option>Simpl</option>
+                <option>LazyPay</option>
+                <option>MobiKwik Zip</option>
+                <option>Flipkart Pay Later</option>
+                <option>PostPe</option>
+              </optgroup>
+              <optgroup label="Cards">
+                <option>Credit Card</option>
+                <option>Debit Card</option>
+                <option>OneCard</option>
+                <option>Slice</option>
+              </optgroup>
+              <optgroup label="App Stores">
+                <option>Google Play</option>
+                <option>Apple App Store</option>
+              </optgroup>
             </select>
           </label>
-          <input type="hidden" name="billingCycle" value="Monthly" />
-          <button type="submit" class="primary-btn">Save Subscription</button>
+          <label>
+            Subscription
+            <select id="add-subscription-select" name="subscription" required disabled>
+              <option value="">Select platform first</option>
+            </select>
+          </label>
+          <p class="modal-note">Already-added subscriptions are disabled.</p>
+          <button type="submit" class="primary-btn">Add Subscription</button>
         </form>
       </div>
     </div>
