@@ -123,7 +123,8 @@ const subscriptions = [
     cibilImpact: "low",
     mcc: "4900",
     cancellationUrl: "https://www.jio.com/selfcare",
-    billingSource: "BBPS"
+    billingSource: "BBPS",
+    isTracked: false
   },
   {
     id: "airtel-broadband",
@@ -142,7 +143,8 @@ const subscriptions = [
     cibilImpact: "high",
     mcc: "4900",
     cancellationUrl: "https://www.airtel.in/broadband",
-    billingSource: "BBPS"
+    billingSource: "BBPS",
+    isTracked: false
   },
   {
     id: "golds-gym",
@@ -401,7 +403,8 @@ const subscriptions = [
     cibilImpact: "high",
     mcc: "7322",
     cancellationUrl: "https://netbanking.hdfcbank.com/netbanking/",
-    billingSource: "BANK_EMI"
+    billingSource: "BANK_EMI",
+    isTracked: false
   },
   {
     id: "car-loan-emi",
@@ -420,7 +423,8 @@ const subscriptions = [
     cibilImpact: "high",
     mcc: "7322",
     cancellationUrl: "https://www.icicibank.com/",
-    billingSource: "BANK_EMI"
+    billingSource: "BANK_EMI",
+    isTracked: false
   },
   {
     id: "health-insurance",
@@ -439,7 +443,8 @@ const subscriptions = [
     cibilImpact: "high",
     mcc: "6301",
     cancellationUrl: "https://www.hdfcergo.com/self-help",
-    billingSource: "BBPS"
+    billingSource: "BBPS",
+    isTracked: false
   },
   {
     id: "term-insurance",
@@ -458,7 +463,8 @@ const subscriptions = [
     cibilImpact: "high",
     mcc: "6301",
     cancellationUrl: "https://licindia.in/",
-    billingSource: "BBPS"
+    billingSource: "BBPS",
+    isTracked: false
   }
 ];
 
