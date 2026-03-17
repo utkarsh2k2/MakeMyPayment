@@ -240,6 +240,51 @@ function deriveControlType(subscription) {
   return "USER_REVOCABLE";
 }
 
+function findSubscriptionForBill(bill) {
+  // Prefer direct id match when bill originates from subscriptions
+  const byId = subscriptions.find((subscription) => String(subscription.id) === String(bill.id));
+  if (byId) {
+    return byId;
+  }
+
+  // Fallback: match by service name + amount + billing date
+  return subscriptions.find((subscription) => {
+    return (
+      String(subscription.serviceName).trim().toLowerCase() ===
+        String(bill.serviceName).trim().toLowerCase() &&
+      Number(subscription.amount || 0) === Number(bill.amount || 0) &&
+      String(subscription.nextBillingDate) === String(bill.nextBillingDate)
+    );
+  });
+}
+
+function createSubscriptionFromBill(bill) {
+  const base = {
+    id: String(bill.id || `${Date.now()}-${Math.floor(Math.random() * 10000)}`),
+    serviceName: String(bill.serviceName || "").trim(),
+    amount: Number(bill.amount || 0),
+    billingCycle: String(bill.billingCycle || "Monthly").trim() || "Monthly",
+    nextBillingDate: bill.nextBillingDate || addDaysFromToday(5),
+    platform: normalizePlatform(bill.platform || "Auto-debit", bill.serviceName),
+    isPaused: false,
+    category: bill.category || "fixed",
+    type: bill.type || "EMI",
+    paymentRail: bill.paymentRail || "CARD",
+    isIrrevocable: Boolean(bill.isIrrevocable),
+    isDuplicate: Boolean(bill.isDuplicate),
+    cibilImpact: bill.cibilImpact || "high",
+    mcc: bill.mcc || null,
+    cancellationUrl: bill.cancellationUrl || null,
+    billingSource: bill.billingSource || "BBPS"
+  };
+
+  return {
+    ...base,
+    sourceSystem: deriveSourceSystem(base),
+    controlType: deriveControlType(base)
+  };
+}
+
 subscriptions.forEach((subscription) => {
   subscription.platform = normalizePlatform(subscription.platform, subscription.serviceName);
   subscription.isPaused = Boolean(subscription.isPaused);
@@ -511,15 +556,30 @@ app.post("/api/fetched-bills/track", (req, res) => {
   const selected = fetchedBills.filter((bill) => idSet.has(String(bill.id)));
 
   const trackedCount = selected.length;
+  let createdCount = 0;
   const highImpactCount = selected.filter((bill) => bill.cibilImpact === "high").length;
+
+  selected.forEach((bill) => {
+    const existing = findSubscriptionForBill(bill);
+    if (!existing) {
+      const newSubscription = createSubscriptionFromBill(bill);
+      subscriptions.push(newSubscription);
+      createdCount += 1;
+    }
+  });
+
+  const message =
+    trackedCount > 0
+      ? createdCount > 0
+        ? `Added ${createdCount} new bill${createdCount !== 1 ? "s" : ""} (${trackedCount} tracked) to Guardian. Keep enough balance to protect your CIBIL.`
+        : `All selected bills were already in Guardian. We’ll keep monitoring them for CIBIL protection.`
+      : "No bills were selected to track.";
 
   return res.json({
     trackedCount,
+    createdCount,
     highImpactCount,
-    message:
-      trackedCount > 0
-        ? `Added ${trackedCount} bill${trackedCount !== 1 ? "s" : ""} to Guardian. Keep enough balance to protect your CIBIL.`
-        : "No bills were selected to track."
+    message
   });
 });
 

@@ -847,7 +847,7 @@ if (fetchBillsReviewEl) {
       const message =
         (response && response.message) ||
         (selectedIds.length
-          ? `Added ${selectedIds.length} bill${selectedIds.length !== 1 ? "s" : ""} to Guardian.`
+          ? `Tracked ${selectedIds.length} bill${selectedIds.length !== 1 ? "s" : ""} in Guardian.`
           : "No bills were selected to track.");
 
       showStatus(message);
